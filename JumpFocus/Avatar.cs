@@ -10,12 +10,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using MK = Microsoft.Kinect;
 
 namespace JumpFocus
 {
     class Avatar
     {
+        private World _world;
+
         private const float ArmDensity = 10;
         private const float LegDensity = 15;
         private const float LimbAngularDamping = 7;
@@ -59,16 +62,31 @@ namespace JumpFocus
         public bool hasJumped { get; private set; }
         public float verticalSpeed { get; private set; }
 
-        public Avatar(World world, Vector2 position)
+        public Avatar(World World, Vector2 position)
         {
-            CreateBody(world, position);
-            CreateJoints(world);
+            _world = World;
+            CreateBody(position);
+            CreateJoints();
         }
 
-        private void CreateBody(World world, Vector2 position)
+        ~Avatar()
+        {
+            _world.RemoveBody(_head);
+            _world.RemoveBody(_torso);
+            _world.RemoveBody(_lowerLeftArm);
+            _world.RemoveBody(_lowerLeftLeg);
+            _world.RemoveBody(_lowerRightArm);
+            _world.RemoveBody(_lowerRightLeg);
+            _world.RemoveBody(_upperLeftArm);
+            _world.RemoveBody(_upperLeftLeg);
+            _world.RemoveBody(_upperRightArm);
+            _world.RemoveBody(_upperRightLeg);
+        }
+
+        private void CreateBody(Vector2 position)
         {
             //Head
-            _head = BodyFactory.CreateCircle(world, 0.9f, 10f);
+            _head = BodyFactory.CreateCircle(_world, 0.9f, 10f);
             _head.BodyType = BodyType.Dynamic;
             _head.AngularDamping = LimbAngularDamping;
             _head.Mass = 2f;
@@ -85,8 +103,8 @@ namespace JumpFocus
             );
 
             //Torso
-            //_torso = BodyFactory.CreateRoundedRectangle(world, 2f, 4f, 0.5f, 0.7f, 2, 10f);
-            _torso = BodyFactory.CreateRectangle(world, 2f, 4f, 2, 10f);
+            //_torso = BodyFactory.CreateRoundedRectangle(_world, 2f, 4f, 0.5f, 0.7f, 2, 10f);
+            _torso = BodyFactory.CreateRectangle(_world, 2f, 4f, 10f);
             //_torso.BodyType = BodyType.Dynamic;
             //_torso.BodyType = BodyType.Kinematic;
             _torso.Mass = 5f;
@@ -117,7 +135,7 @@ namespace JumpFocus
             //);
 
             //Left Arm
-            _lowerLeftArm = BodyFactory.CreateRectangle(world, 0.45f, 1f, ArmDensity);
+            _lowerLeftArm = BodyFactory.CreateRectangle(_world, 0.45f, 1f, ArmDensity);
             _lowerLeftArm.BodyType = BodyType.Dynamic;
             _lowerLeftArm.AngularDamping = LimbAngularDamping;
             _lowerLeftArm.Mass = 2f;
@@ -134,7 +152,7 @@ namespace JumpFocus
                 }
             );
 
-            _upperLeftArm = BodyFactory.CreateRectangle(world, 0.45f, 1f, ArmDensity);
+            _upperLeftArm = BodyFactory.CreateRectangle(_world, 0.45f, 1f, ArmDensity);
             _upperLeftArm.BodyType = BodyType.Dynamic;
             _upperLeftArm.AngularDamping = LimbAngularDamping;
             _upperLeftArm.Mass = 2f;
@@ -152,7 +170,7 @@ namespace JumpFocus
             );
 
             //Right Arm
-            _lowerRightArm = BodyFactory.CreateRectangle(world, 0.45f, 1f, ArmDensity);
+            _lowerRightArm = BodyFactory.CreateRectangle(_world, 0.45f, 1f, ArmDensity);
             _lowerRightArm.BodyType = BodyType.Dynamic;
             _lowerRightArm.AngularDamping = LimbAngularDamping;
             _lowerRightArm.Mass = 2f;
@@ -169,7 +187,7 @@ namespace JumpFocus
                 }
             );
 
-            _upperRightArm = BodyFactory.CreateRectangle(world, 0.45f, 1f, ArmDensity);
+            _upperRightArm = BodyFactory.CreateRectangle(_world, 0.45f, 1f, ArmDensity);
             _upperRightArm.BodyType = BodyType.Dynamic;
             _upperRightArm.AngularDamping = LimbAngularDamping;
             _upperRightArm.Mass = 2f;
@@ -187,7 +205,7 @@ namespace JumpFocus
             );
 
             //Left Leg
-            _lowerLeftLeg = BodyFactory.CreateRectangle(world, 0.5f, 1f, LegDensity);
+            _lowerLeftLeg = BodyFactory.CreateRectangle(_world, 0.5f, 1f, LegDensity);
             _lowerLeftLeg.BodyType = BodyType.Dynamic;
             _lowerLeftLeg.AngularDamping = LimbAngularDamping;
             _lowerLeftLeg.Mass = 2f;
@@ -203,7 +221,7 @@ namespace JumpFocus
                 }
             );
 
-            _upperLeftLeg = BodyFactory.CreateRectangle(world, 0.5f, 1f, LegDensity);
+            _upperLeftLeg = BodyFactory.CreateRectangle(_world, 0.5f, 1f, LegDensity);
             _upperLeftLeg.BodyType = BodyType.Dynamic;
             _upperLeftLeg.AngularDamping = LimbAngularDamping;
             _upperLeftLeg.Mass = 2f;
@@ -220,7 +238,7 @@ namespace JumpFocus
             );
 
             //Right Leg
-            _lowerRightLeg = BodyFactory.CreateRectangle(world, 0.5f, 1f, LegDensity);
+            _lowerRightLeg = BodyFactory.CreateRectangle(_world, 0.5f, 1f, LegDensity);
             _lowerRightLeg.BodyType = BodyType.Dynamic;
             _lowerRightLeg.AngularDamping = LimbAngularDamping;
             _lowerRightLeg.Mass = 2f;
@@ -236,7 +254,7 @@ namespace JumpFocus
                 }
             );
 
-            _upperRightLeg = BodyFactory.CreateRectangle(world, 0.5f, 1f, LegDensity);
+            _upperRightLeg = BodyFactory.CreateRectangle(_world, 0.5f, 1f, LegDensity);
             _upperRightLeg.BodyType = BodyType.Dynamic;
             _upperRightLeg.AngularDamping = LimbAngularDamping;
             _upperRightLeg.Mass = 2f;
@@ -253,7 +271,7 @@ namespace JumpFocus
             );
         }
 
-        private void CreateJoints(World world)
+        private void CreateJoints()
         {
             const float dampingRatio = 1f;
             const float frequency = 25f;
@@ -264,7 +282,7 @@ namespace JumpFocus
                                                         new Vector2(0f, -2f));
             jHeadBody.CollideConnected = false;
             jHeadBody.MotorEnabled = false;
-            world.AddJoint(jHeadBody);
+            _world.AddJoint(jHeadBody);
 
             //lowerLeftArm -> upperLeftArm
             _jLeftArm = new RevoluteJoint(_lowerLeftArm, _upperLeftArm,
@@ -272,7 +290,7 @@ namespace JumpFocus
                                                        new Vector2(0f, 1f));
             _jLeftArm.CollideConnected = false;
             _jLeftArm.MotorEnabled = true;
-            world.AddJoint(_jLeftArm);
+            _world.AddJoint(_jLeftArm);
 
             //upperLeftArm -> body
             _jLeftArmBody = new RevoluteJoint(_upperLeftArm, _torso,
@@ -280,7 +298,7 @@ namespace JumpFocus
                                                            new Vector2(-1f, -1.5f));
             _jLeftArmBody.CollideConnected = false;
             _jLeftArmBody.MotorEnabled = true;
-            world.AddJoint(_jLeftArmBody);
+            _world.AddJoint(_jLeftArmBody);
 
             //lowerRightArm -> upperRightArm
             _jRightArm = new RevoluteJoint(_lowerRightArm, _upperRightArm,
@@ -288,7 +306,7 @@ namespace JumpFocus
                                                         new Vector2(0f, 1f));
             _jRightArm.CollideConnected = false;
             _jRightArm.MotorEnabled = true;
-            world.AddJoint(_jRightArm);
+            _world.AddJoint(_jRightArm);
 
             //upperRightArm -> body
             _jRightArmBody = new RevoluteJoint(_upperRightArm, _torso,
@@ -296,7 +314,7 @@ namespace JumpFocus
                                                             new Vector2(1f, -1.5f));
             _jRightArmBody.CollideConnected = false;
             _jRightArmBody.MotorEnabled = true;
-            world.AddJoint(_jRightArmBody);
+            _world.AddJoint(_jRightArmBody);
 
             //lowerLeftLeg -> upperLeftLeg
             _jLeftLeg = new RevoluteJoint(_lowerLeftLeg, _upperLeftLeg,
@@ -304,7 +322,7 @@ namespace JumpFocus
                                                        new Vector2(0f, 1f));
             _jLeftLeg.CollideConnected = false;
             _jLeftLeg.MotorEnabled = true;
-            world.AddJoint(_jLeftLeg);
+            _world.AddJoint(_jLeftLeg);
 
             //upperLeftLeg -> body
             _jLeftLegBody = new RevoluteJoint(_upperLeftLeg, _torso,
@@ -312,7 +330,7 @@ namespace JumpFocus
                                                            new Vector2(-0.8f, 1.9f));
             _jLeftLegBody.CollideConnected = false;
             _jLeftLegBody.MotorEnabled = true;
-            world.AddJoint(_jLeftLegBody);
+            _world.AddJoint(_jLeftLegBody);
 
             //lowerRightleg -> upperRightleg
             _jRightLeg = new RevoluteJoint(_lowerRightLeg, _upperRightLeg,
@@ -320,7 +338,7 @@ namespace JumpFocus
                                                         new Vector2(0f, 1f));
             _jRightLeg.CollideConnected = false;
             _jRightLeg.MotorEnabled = true;
-            world.AddJoint(_jRightLeg);
+            _world.AddJoint(_jRightLeg);
 
             //upperRightleg -> body
             _jRightLegBody = new RevoluteJoint(_upperRightLeg, _torso,
@@ -328,7 +346,7 @@ namespace JumpFocus
                                                             new Vector2(0.8f, 1.9f));
             _jRightLegBody.CollideConnected = false;
             _jRightLegBody.MotorEnabled = true;
-            world.AddJoint(_jRightLegBody);
+            _world.AddJoint(_jRightLegBody);
         }
 
         public void Draw(DrawingContext dc)
@@ -338,6 +356,11 @@ namespace JumpFocus
 
             var background = new SolidColorBrush(black);
             var brush = new SolidColorBrush(red);
+
+            if (double.IsNaN(_head.Position.X) || double.IsNaN(_head.Position.Y))
+            {
+                return;
+            }
 
             _headGeo.Center = new Point
             {
@@ -355,8 +378,8 @@ namespace JumpFocus
                 Height = _torsoGeo.Rect.Height
             };
             _torsoGeo.Transform = new RotateTransform(
-                MathHelper.ToDegrees(_torso.Rotation), 
-                ConvertUnits.ToDisplayUnits(_torso.Position.X), 
+                MathHelper.ToDegrees(_torso.Rotation),
+                ConvertUnits.ToDisplayUnits(_torso.Position.X),
                 ConvertUnits.ToDisplayUnits(_torso.Position.Y));
             dc.DrawGeometry(brush, null, _torsoGeo);
 
@@ -445,14 +468,14 @@ namespace JumpFocus
         {
             if (Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
             {
-                float maxTorque = 250f;
+                float maxTorque = 400f;
                 float speedFactor = 2f;
                 StepSeconds = StepSeconds / speedFactor;
 
                 //Jump
-                if (Joints[MK.JointType.HandRight].TrackingState == MK.TrackingState.Tracked)
+                if (Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
                 {
-                    var currentPosition = Joints[MK.JointType.HandRight].Position;
+                    var currentPosition = Joints[MK.JointType.SpineMid].Position;
                     if (_previousPosition != default(MK.CameraSpacePoint))
                     {
                         if (hasJumped)
@@ -465,7 +488,7 @@ namespace JumpFocus
                             var currentSpeed = (currentPosition.Y - _previousPosition.Y) / StepSeconds;
                             verticalSpeed = verticalSpeed > currentSpeed ? verticalSpeed : currentSpeed;
 
-                            if (verticalSpeed > 2)
+                            if (verticalSpeed > 4)
                             {
                                 _torso.BodyType = BodyType.Dynamic;
                                 _torso.ApplyLinearImpulse(new Vector2(0, -100 * verticalSpeed));
@@ -480,6 +503,17 @@ namespace JumpFocus
                     _previousPosition = currentPosition;
                 }
 
+                //Torso
+                if (Joints[MK.JointType.ShoulderLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderRight].TrackingState == MK.TrackingState.Tracked)
+                {
+                    var start = Joints[MK.JointType.ShoulderLeft].Position;
+                    var end = Joints[MK.JointType.ShoulderRight].Position;
+
+                    var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
+
+                    _torso.Rotation = -expectedRadian;
+                }
+
                 //Right Arm
                 if (Joints[MK.JointType.ElbowRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderRight].TrackingState == MK.TrackingState.Tracked)
                 {
@@ -491,7 +525,6 @@ namespace JumpFocus
                     _jRightArmBody.MotorSpeed = (expectedRadian - _jRightArmBody.JointAngle) / StepSeconds;
                     _jRightArmBody.MaxMotorTorque = maxTorque;
                 }
-
                 if (Joints[MK.JointType.WristRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ElbowRight].TrackingState == MK.TrackingState.Tracked)
                 {
                     var start = Joints[MK.JointType.ElbowRight].Position;
@@ -514,7 +547,6 @@ namespace JumpFocus
                     _jLeftArmBody.MotorSpeed = (expectedRadian - _jLeftArmBody.JointAngle) / StepSeconds;
                     _jLeftArmBody.MaxMotorTorque = maxTorque;
                 }
-
                 if (Joints[MK.JointType.WristLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ElbowLeft].TrackingState == MK.TrackingState.Tracked)
                 {
                     var start = Joints[MK.JointType.WristLeft].Position;
@@ -537,7 +569,6 @@ namespace JumpFocus
                     _jRightLegBody.MotorSpeed = expectedRadian - _jRightLegBody.JointAngle;
                     _jRightLegBody.MaxMotorTorque = maxTorque;
                 }
-
                 if (Joints[MK.JointType.AnkleRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.KneeRight].TrackingState == MK.TrackingState.Tracked)
                 {
                     var start = Joints[MK.JointType.AnkleRight].Position;
@@ -560,7 +591,6 @@ namespace JumpFocus
                     _jLeftLegBody.MotorSpeed = expectedRadian - _jLeftLegBody.JointAngle;
                     _jLeftLegBody.MaxMotorTorque = maxTorque;
                 }
-
                 if (Joints[MK.JointType.AnkleLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.KneeLeft].TrackingState == MK.TrackingState.Tracked)
                 {
                     var start = Joints[MK.JointType.AnkleLeft].Position;

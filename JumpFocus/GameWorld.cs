@@ -1,5 +1,6 @@
 ﻿using FarseerPhysics;
 using FarseerPhysics.Common;
+using FarseerPhysics.Common.Decomposition;
 using FarseerPhysics.Dynamics;
 using FarseerPhysics.Dynamics.Contacts;
 using FarseerPhysics.Factories;
@@ -12,7 +13,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace JumpFocus
 {
@@ -25,14 +28,23 @@ namespace JumpFocus
 
         private Rect _camera;
         private Body _anchor;
-        private ObservableCollection<Body> _coins;
-        private Queue<Body> _ballBodies;
+        private List<Body> _coins;
+        private List<Body> _clouds;
+        private List<Body> _cats;
 
         private Brush _greenBrush = new RadialGradientBrush(Color.FromArgb(0, 0, 0, 0), Color.FromArgb(255, 0, 122, 0));
         private Brush _brownBrush = new RadialGradientBrush(Color.FromArgb(0, 0, 0, 0), Color.FromArgb(255, 200, 80, 80));
         private Brush _redBrush = new SolidColorBrush(Color.FromArgb(255, 122, 0, 0));
         private Brush _blueBrush = new SolidColorBrush(Color.FromArgb(255, 0, 0, 255));
         private Typeface _typeface = new Typeface("Verdana");
+        private Uri _cloudUri = new Uri("pack://application:,,,/Resources/Images/cloud.png");
+        private Uri _coinUri = new Uri("pack://application:,,,/Resources/Images/coin.png");
+        private Uri _catUri = new Uri("pack://application:,,,/Resources/Images/cat.png");
+
+        private BitmapImage _cloudImg;
+        private BitmapImage _coinImg;
+        private BitmapImage _catImg;
+        private TransformedBitmap _catReversedImg;
 
         private int _score = 0;
 
@@ -44,6 +56,11 @@ namespace JumpFocus
         public GameWorld(World world)
         {
             _world = world;
+
+            _cloudImg = new BitmapImage(_cloudUri);
+            _coinImg = new BitmapImage(_coinUri);
+            _catImg = new BitmapImage(_catUri);
+            _catReversedImg = new TransformedBitmap(_catImg, new ScaleTransform(-1, 1));
         }
 
         public void MoveCameraTo(double X, double Y)
@@ -71,36 +88,68 @@ namespace JumpFocus
             _anchor = BodyFactory.CreateLoopShape(_world, borders);
             _anchor.Restitution = 1f;
 
-            //Ball stuff
-            _ballBodies = new Queue<Body>();
-            for (int i = 0; i < 100; i++)
-            {
-                var position = new Vector2(i);
-                var ball = BodyFactory.CreateCircle(_world, 0.5f, 1f, position);
-                ball.BodyType = BodyType.Dynamic;
-                ball.Mass = 10f;
-                ball.CollisionCategories = Category.Cat1;
-                ball.CollidesWith = Category.Cat1;
-                _ballBodies.Enqueue(ball);
-            }
-
-            _coins = new ObservableCollection<Body>();
+            //Creates Dogecoins
+            _coins = new List<Body>();
             var rand = new Random();
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 50; i++)
             {
-                var position = new Vector2(rand.Next(2, 120), rand.Next(2, 120));
+                var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
 
-                var coin = BodyFactory.CreateCircle(_world, 1f, 1f, position);
+                var coin = BodyFactory.CreateCircle(_world, 2f, 2f, position);
                 coin.BodyType = BodyType.Static;
                 coin.CollisionCategories = Category.Cat2;
-                //coin.CollidesWith = FP.Dynamics.Category.Cat2;
+                coin.CollidesWith = Category.Cat1;
                 coin.UserData = new Coin { Id = i, Value = rand.Next(10, 50) }; //nb of points
                 coin.OnCollision += coin_OnCollision;
 
                 _coins.Add(coin);
             }
 
-            _coins.CollectionChanged += _coins_CollectionChanged;
+            //Add clouds
+
+            ////Creates the cloud in the physic engine from the image
+            int nStride = (_cloudImg.PixelWidth * _cloudImg.Format.BitsPerPixel + 7) / 8;
+            uint[] pixels = new uint[_cloudImg.PixelHeight * nStride];
+            _cloudImg.CopyPixels(pixels, nStride, 0);
+            var vertices = PolygonTools.CreatePolygon(pixels, _cloudImg.PixelWidth);
+            //For now we need to scale the vertices (result is in pixels, we use meters)
+            Vector2 scale = new Vector2(1 / 128f, 1 / 128f);
+            vertices.Scale(ref scale);
+            var verticesList = Triangulate.ConvexPartition(vertices, TriangulationAlgorithm.Bayazit);
+            ////end
+
+            _clouds = new List<Body>();
+            rand = new Random();
+            for (int i = 0; i < 50; i++)
+            {
+                var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
+                //Create a single body with multiple fixtures
+                var cloud = BodyFactory.CreateCompoundPolygon(_world, verticesList, .0f, position);
+                cloud.BodyType = BodyType.Static;
+                cloud.CollisionCategories = Category.Cat3;
+                cloud.CollidesWith = Category.Cat1;
+                cloud.OnCollision += cloud_OnCollision;
+
+                _clouds.Add(cloud);
+            }
+
+            //Add cats
+            _cats = new List<Body>();
+            rand = new Random();
+            for (int i = 0; i < 10; i++)
+            {
+                var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
+                var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
+                cat.BodyType = BodyType.Dynamic;
+                cat.Mass = 10f;
+                cat.IgnoreGravity = true;
+                cat.CollisionCategories = Category.Cat3;
+                cat.CollidesWith = Category.Cat1;
+
+                float speed = rand.Next(0, 2) == 1 ? rand.Next(1000, 10000) : -rand.Next(1000, 10000);
+                cat.ApplyLinearImpulse(new Vector2(speed, 0));
+                _cats.Add(cat);
+            }
         }
 
         public void Draw(DrawingContext dc)
@@ -137,34 +186,69 @@ namespace JumpFocus
             fText = new FormattedText(altitude, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _blueBrush);
             dc.DrawText(fText, Point.Add(_camera.Location, new Vector(0, 150)));
 
-            //Draw balls
-            foreach (var ball in _ballBodies)
+            //Draw coins
+            foreach (var bodyCoin in _coins)
             {
-                var point = new Point();
-                point.Y = ConvertUnits.ToDisplayUnits(ball.Position.Y);
-                point.X = ConvertUnits.ToDisplayUnits(ball.Position.X);
-                var ballGeo = new EllipseGeometry(point, ConvertUnits.ToDisplayUnits(0.5f), ConvertUnits.ToDisplayUnits(0.5f));
-
-                if (bg.FillContains(ballGeo))
+                if (bodyCoin.Enabled)
                 {
-                    dc.DrawGeometry(_greenBrush, null, ballGeo);
+                    var coin = (Coin)bodyCoin.UserData;
+                    if (coin.Value > 0)
+                    {
+                        var imgContainer = new Rect
+                        {
+                            X = ConvertUnits.ToDisplayUnits(bodyCoin.Position.X),
+                            Y = ConvertUnits.ToDisplayUnits(bodyCoin.Position.Y),
+                            Width = ConvertUnits.ToDisplayUnits(2f),
+                            Height = ConvertUnits.ToDisplayUnits(2f)
+                        };
+
+                        if (bg.FillContains(new RectangleGeometry(imgContainer)))
+                        {
+                            //dc.DrawGeometry(_brownBrush, null, coinGeo);
+                            dc.DrawImage(_coinImg, imgContainer);
+                        }
+                    }
                 }
             }
 
-            //Draw coins
-            foreach (var coin in _coins)
+            //Draw clouds
+            foreach (var cloud in _clouds)
             {
-                if (coin.Enabled)
+                var imgContainer = new Rect
                 {
-                    var point = new Point();
-                    point.Y = ConvertUnits.ToDisplayUnits(coin.Position.Y);
-                    point.X = ConvertUnits.ToDisplayUnits(coin.Position.X);
+                    X = ConvertUnits.ToDisplayUnits(cloud.Position.X),
+                    Y = ConvertUnits.ToDisplayUnits(cloud.Position.Y),
+                    Width = _cloudImg.PixelWidth,
+                    Height = _cloudImg.PixelHeight
+                };
 
-                    var coinGeo = new EllipseGeometry(point, ConvertUnits.ToDisplayUnits(1f), ConvertUnits.ToDisplayUnits(1f));
+                if (bg.FillContains(new RectangleGeometry(imgContainer)))
+                {
+                    dc.DrawImage(_cloudImg, imgContainer);
+                }
+            }
 
-                    if (bg.FillContains(coinGeo))
+            //Draw cats
+            foreach (var cat in _cats)
+            {
+                //Flip the picture
+                var imgContainer = new Rect
+                {
+                    X = ConvertUnits.ToDisplayUnits(cat.Position.X),
+                    Y = ConvertUnits.ToDisplayUnits(cat.Position.Y),
+                    Width = _catImg.PixelWidth,
+                    Height = _catImg.PixelHeight
+                };
+
+                if (bg.FillContains(new RectangleGeometry(imgContainer)))
+                {
+                    if (cat.LinearVelocity.X > 0)
                     {
-                        dc.DrawGeometry(_brownBrush, null, coinGeo);
+                        dc.DrawImage(_catImg, imgContainer);
+                    }
+                    else
+                    {
+                        dc.DrawImage(_catReversedImg, imgContainer);
                     }
                 }
             }
@@ -175,23 +259,31 @@ namespace JumpFocus
             var coin = (Coin)fixtureA.Body.UserData;
             _score += coin.Value;
 
-            //_coins.RemoveAt(coin.Id);
             coin.Value = 0;
             fixtureA.Body.UserData = coin;
 
-            return true;
+            return false;
         }
 
-        void _coins_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        /// <summary>
+        /// Slows down the body going up but doesn't go further
+        /// </summary>
+        bool cloud_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
-            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove)
+            var body = fixtureB.Body;
+
+            //Needed for the world boundaries
+            if (body.BodyType == BodyType.Static)
             {
-                var coins = sender as ObservableCollection<Body>;
-                foreach (var coin in coins)
-                {
-                    _world.RemoveBody(coin);
-                }
+                return true;
             }
+
+            if (body.LinearVelocity.Y > 0)
+            {
+                fixtureB.Body.ApplyLinearImpulse(new Vector2(0, 1f));
+            }
+
+            return false;
         }
     }
 }

@@ -125,7 +125,6 @@ namespace JumpFocus.ViewModels
                                 {
                                     var body = _bodies.First(b => b.TrackingId == _currentUserId);
                                     _avatar.Move(body.Joints, stepSeconds);
-                                    _avatar.Draw(dc);
                                 }
                                 else
                                 {
@@ -135,7 +134,6 @@ namespace JumpFocus.ViewModels
                                         {
                                             _currentUserId = body.TrackingId;
                                             _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 10f));
-                                            _avatar.Draw(dc);
                                             break;
                                         }
                                     }
@@ -143,6 +141,7 @@ namespace JumpFocus.ViewModels
 
                                 if (null != _avatar)
                                 {
+                                    _avatar.Draw(dc);
                                     _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
                                 }
                             }

@@ -16,22 +16,15 @@ namespace JumpFocus.ViewModels
     {
         private KinectSensor _sensor;
 
-        private WelcomeViewModel _welcomeViewModel;
         private JumpViewModel _jumpViewModel;
 
         public MainViewModel()
         {
             _sensor = KinectSensor.Default;
 
-            _welcomeViewModel = new WelcomeViewModel(_sensor);
             _jumpViewModel = new JumpViewModel(_sensor);
 
             ShowJump();
-        }
-
-        public void ShowWelcome()
-        {
-            ActivateItem(_welcomeViewModel);
         }
 
         public void ShowJump()
