@@ -52,6 +52,7 @@ namespace JumpFocus
         public float WorldHeight { get { return _worldHeight; } }
 
         public int Altitude { get; private set; }
+        public bool hasLanded { get; private set; }
 
         public GameWorld(World world)
         {
@@ -86,6 +87,7 @@ namespace JumpFocus
             };
 
             _anchor = BodyFactory.CreateLoopShape(_world, borders);
+            _anchor.OnCollision += _anchor_OnCollision;
             _anchor.Restitution = 1f;
 
             //Creates Dogecoins
@@ -141,8 +143,9 @@ namespace JumpFocus
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
                 var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
                 cat.BodyType = BodyType.Dynamic;
-                cat.Mass = 10f;
                 cat.IgnoreGravity = true;
+                cat.Mass = 10f;
+                //cat.IgnoreGravity = true;
                 cat.CollisionCategories = Category.Cat3;
                 cat.CollidesWith = Category.Cat1;
 
@@ -284,6 +287,19 @@ namespace JumpFocus
             }
 
             return false;
+        }
+
+        bool _anchor_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
+        {
+            var body = fixtureB.Body;
+
+            if (fixtureB.CollisionCategories == Category.Cat1)
+            {
+                hasLanded = true;
+                //end of game
+            }
+
+            return true;
         }
     }
 }

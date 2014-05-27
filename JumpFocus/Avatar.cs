@@ -273,9 +273,6 @@ namespace JumpFocus
 
         private void CreateJoints()
         {
-            const float dampingRatio = 1f;
-            const float frequency = 25f;
-
             //head -> body
             RevoluteJoint jHeadBody = new RevoluteJoint(_head, _torso,
                                                         new Vector2(0f, 1f),
@@ -466,9 +463,115 @@ namespace JumpFocus
 
         public void Move(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
         {
+            float maxTorque = 400f;
+            float speedFactor = 2f;
+            StepSeconds = StepSeconds / speedFactor;
+
+            //Torso
+            if (Joints[MK.JointType.ShoulderLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderRight].TrackingState == MK.TrackingState.Tracked)
+            {
+                var start = Joints[MK.JointType.ShoulderLeft].Position;
+                var end = Joints[MK.JointType.ShoulderRight].Position;
+
+                var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
+
+                _torso.Rotation = -expectedRadian;
+            }
+
+            //Right Arm
+            if (Joints[MK.JointType.ElbowRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderRight].TrackingState == MK.TrackingState.Tracked)
+            {
+                var start = Joints[MK.JointType.ShoulderRight].Position;
+                var end = Joints[MK.JointType.ElbowRight].Position;
+
+                var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
+
+                _jRightArmBody.MotorSpeed = (expectedRadian - _jRightArmBody.JointAngle) / StepSeconds;
+                _jRightArmBody.MaxMotorTorque = maxTorque;
+            }
+            if (Joints[MK.JointType.WristRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ElbowRight].TrackingState == MK.TrackingState.Tracked)
+            {
+                var start = Joints[MK.JointType.ElbowRight].Position;
+                var end = Joints[MK.JointType.WristRight].Position;
+
+                var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
+
+                _jRightArm.MotorSpeed = (expectedRadian - _jRightArm.JointAngle) / StepSeconds;
+                _jRightArm.MaxMotorTorque = maxTorque;
+            }
+
+            //Left Arm
+            if (Joints[MK.JointType.ElbowLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderLeft].TrackingState == MK.TrackingState.Tracked)
+            {
+                var start = Joints[MK.JointType.ElbowLeft].Position;
+                var end = Joints[MK.JointType.ShoulderLeft].Position;
+
+                var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
+
+                _jLeftArmBody.MotorSpeed = (expectedRadian - _jLeftArmBody.JointAngle) / StepSeconds;
+                _jLeftArmBody.MaxMotorTorque = maxTorque;
+            }
+            if (Joints[MK.JointType.WristLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ElbowLeft].TrackingState == MK.TrackingState.Tracked)
+            {
+                var start = Joints[MK.JointType.WristLeft].Position;
+                var end = Joints[MK.JointType.ElbowLeft].Position;
+
+                var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
+
+                _jLeftArm.MotorSpeed = (expectedRadian - _jLeftArm.JointAngle) / StepSeconds;
+                _jLeftArm.MaxMotorTorque = maxTorque;
+            }
+
+            //Right Leg
+            if (Joints[MK.JointType.KneeRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.HipRight].TrackingState == MK.TrackingState.Tracked)
+            {
+                var start = Joints[MK.JointType.KneeRight].Position;
+                var end = Joints[MK.JointType.HipRight].Position;
+
+                var expectedRadian = (float)((Math.Atan2(end.Y - start.Y, end.X - start.X)) - (Math.PI / 2));
+
+                _jRightLegBody.MotorSpeed = expectedRadian - _jRightLegBody.JointAngle;
+                _jRightLegBody.MaxMotorTorque = maxTorque;
+            }
+            if (Joints[MK.JointType.AnkleRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.KneeRight].TrackingState == MK.TrackingState.Tracked)
+            {
+                var start = Joints[MK.JointType.AnkleRight].Position;
+                var end = Joints[MK.JointType.KneeRight].Position;
+
+                var expectedRadian = (float)((Math.Atan2(end.Y - start.Y, end.X - start.X)) - (Math.PI / 2));
+
+                _jRightLeg.MotorSpeed = expectedRadian - _jRightLeg.JointAngle;
+                _jRightLeg.MaxMotorTorque = maxTorque;
+            }
+
+            //Left Leg
+            if (Joints[MK.JointType.KneeLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.HipLeft].TrackingState == MK.TrackingState.Tracked)
+            {
+                var start = Joints[MK.JointType.KneeLeft].Position;
+                var end = Joints[MK.JointType.HipLeft].Position;
+
+                var expectedRadian = (float)((Math.Atan2(end.Y - start.Y, end.X - start.X)) - (Math.PI / 2));
+
+                _jLeftLegBody.MotorSpeed = expectedRadian - _jLeftLegBody.JointAngle;
+                _jLeftLegBody.MaxMotorTorque = maxTorque;
+            }
+            if (Joints[MK.JointType.AnkleLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.KneeLeft].TrackingState == MK.TrackingState.Tracked)
+            {
+                var start = Joints[MK.JointType.AnkleLeft].Position;
+                var end = Joints[MK.JointType.KneeLeft].Position;
+
+                var expectedRadian = (float)((Math.Atan2(end.Y - start.Y, end.X - start.X)) - (Math.PI / 2));
+
+                _jLeftLeg.MotorSpeed = expectedRadian - _jLeftLeg.JointAngle;
+                _jLeftLeg.MaxMotorTorque = maxTorque;
+            }
+        }
+
+
+        public void Jump(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
+        {
             if (Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
             {
-                float maxTorque = 400f;
                 float speedFactor = 2f;
                 StepSeconds = StepSeconds / speedFactor;
 
@@ -501,105 +604,6 @@ namespace JumpFocus
                         }
                     }
                     _previousPosition = currentPosition;
-                }
-
-                //Torso
-                if (Joints[MK.JointType.ShoulderLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderRight].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var start = Joints[MK.JointType.ShoulderLeft].Position;
-                    var end = Joints[MK.JointType.ShoulderRight].Position;
-
-                    var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
-
-                    _torso.Rotation = -expectedRadian;
-                }
-
-                //Right Arm
-                if (Joints[MK.JointType.ElbowRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderRight].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var start = Joints[MK.JointType.ShoulderRight].Position;
-                    var end = Joints[MK.JointType.ElbowRight].Position;
-
-                    var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
-
-                    _jRightArmBody.MotorSpeed = (expectedRadian - _jRightArmBody.JointAngle) / StepSeconds;
-                    _jRightArmBody.MaxMotorTorque = maxTorque;
-                }
-                if (Joints[MK.JointType.WristRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ElbowRight].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var start = Joints[MK.JointType.ElbowRight].Position;
-                    var end = Joints[MK.JointType.WristRight].Position;
-
-                    var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
-
-                    _jRightArm.MotorSpeed = (expectedRadian - _jRightArm.JointAngle) / StepSeconds;
-                    _jRightArm.MaxMotorTorque = maxTorque;
-                }
-
-                //Left Arm
-                if (Joints[MK.JointType.ElbowLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderLeft].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var start = Joints[MK.JointType.ElbowLeft].Position;
-                    var end = Joints[MK.JointType.ShoulderLeft].Position;
-
-                    var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
-
-                    _jLeftArmBody.MotorSpeed = (expectedRadian - _jLeftArmBody.JointAngle) / StepSeconds;
-                    _jLeftArmBody.MaxMotorTorque = maxTorque;
-                }
-                if (Joints[MK.JointType.WristLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ElbowLeft].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var start = Joints[MK.JointType.WristLeft].Position;
-                    var end = Joints[MK.JointType.ElbowLeft].Position;
-
-                    var expectedRadian = (float)(Math.Atan2(end.Y - start.Y, end.X - start.X));
-
-                    _jLeftArm.MotorSpeed = (expectedRadian - _jLeftArm.JointAngle) / StepSeconds;
-                    _jLeftArm.MaxMotorTorque = maxTorque;
-                }
-
-                //Right Leg
-                if (Joints[MK.JointType.KneeRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.HipRight].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var start = Joints[MK.JointType.KneeRight].Position;
-                    var end = Joints[MK.JointType.HipRight].Position;
-
-                    var expectedRadian = (float)((Math.Atan2(end.Y - start.Y, end.X - start.X)) - (Math.PI / 2));
-
-                    _jRightLegBody.MotorSpeed = expectedRadian - _jRightLegBody.JointAngle;
-                    _jRightLegBody.MaxMotorTorque = maxTorque;
-                }
-                if (Joints[MK.JointType.AnkleRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.KneeRight].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var start = Joints[MK.JointType.AnkleRight].Position;
-                    var end = Joints[MK.JointType.KneeRight].Position;
-
-                    var expectedRadian = (float)((Math.Atan2(end.Y - start.Y, end.X - start.X)) - (Math.PI / 2));
-
-                    _jRightLeg.MotorSpeed = expectedRadian - _jRightLeg.JointAngle;
-                    _jRightLeg.MaxMotorTorque = maxTorque;
-                }
-
-                //Left Leg
-                if (Joints[MK.JointType.KneeLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.HipLeft].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var start = Joints[MK.JointType.KneeLeft].Position;
-                    var end = Joints[MK.JointType.HipLeft].Position;
-
-                    var expectedRadian = (float)((Math.Atan2(end.Y - start.Y, end.X - start.X)) - (Math.PI / 2));
-
-                    _jLeftLegBody.MotorSpeed = expectedRadian - _jLeftLegBody.JointAngle;
-                    _jLeftLegBody.MaxMotorTorque = maxTorque;
-                }
-                if (Joints[MK.JointType.AnkleLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.KneeLeft].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var start = Joints[MK.JointType.AnkleLeft].Position;
-                    var end = Joints[MK.JointType.KneeLeft].Position;
-
-                    var expectedRadian = (float)((Math.Atan2(end.Y - start.Y, end.X - start.X)) - (Math.PI / 2));
-
-                    _jLeftLeg.MotorSpeed = expectedRadian - _jLeftLeg.JointAngle;
-                    _jLeftLeg.MaxMotorTorque = maxTorque;
                 }
             }
         }

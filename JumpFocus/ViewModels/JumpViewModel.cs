@@ -108,7 +108,12 @@ namespace JumpFocus.ViewModels
                                 _stopwatch.Stop();
                                 //Set next step depending on the kinect FPS rate
                                 stepSeconds = (float)_stopwatch.Elapsed.TotalSeconds;
-                                _world.Step(stepSeconds);
+
+                                //Stop the game once the player has landed
+                                if (!_gameWorld.hasLanded)
+                                {
+                                    _world.Step(stepSeconds);
+                                }
                                 _stopwatch.Reset();
                             }
                             if (!_stopwatch.IsRunning)
@@ -121,10 +126,18 @@ namespace JumpFocus.ViewModels
                             {
                                 _gameWorld.Draw(dc);
 
+                                //We already have a player
                                 if (_currentUserId > 0 && _bodies.Any(b => b.TrackingId == _currentUserId && b.IsTracked == true))
                                 {
                                     var body = _bodies.First(b => b.TrackingId == _currentUserId);
+                                    
                                     _avatar.Move(body.Joints, stepSeconds);
+
+                                    //player ready
+                                    if (true)
+                                    {
+                                        _avatar.Jump(body.Joints, stepSeconds); 
+                                    }
                                 }
                                 else
                                 {
