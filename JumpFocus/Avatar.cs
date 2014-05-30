@@ -59,8 +59,9 @@ namespace JumpFocus
 
         //Jump related
         private MK.CameraSpacePoint _previousPosition;
-        public bool hasJumped { get; private set; }
-        public float verticalSpeed { get; private set; }
+        public bool HasJumped { get; private set; }
+        public bool IsReadyToJump { get; set; }
+        public float VerticalSpeed { get; private set; }
 
         public Avatar(World World, Vector2 position)
         {
@@ -567,10 +568,9 @@ namespace JumpFocus
             }
         }
 
-
         public void Jump(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
         {
-            if (Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
+            if (IsReadyToJump && Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
             {
                 float speedFactor = 2f;
                 StepSeconds = StepSeconds / speedFactor;
@@ -578,10 +578,10 @@ namespace JumpFocus
                 //Jump
                 if (Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
                 {
-                    var currentPosition = Joints[MK.JointType.SpineMid].Position;
+                    var currentPosition = Joints[MK.JointType.HandRight].Position;
                     if (_previousPosition != default(MK.CameraSpacePoint))
                     {
-                        if (hasJumped)
+                        if (HasJumped)
                         {
                             var hSpeed = -(50 * (_previousPosition.X - currentPosition.X) / StepSeconds);
                             _torso.ApplyLinearImpulse(new Vector2(hSpeed, 0));
@@ -589,16 +589,16 @@ namespace JumpFocus
                         else if (StepSeconds > 0)
                         {
                             var currentSpeed = (currentPosition.Y - _previousPosition.Y) / StepSeconds;
-                            verticalSpeed = verticalSpeed > currentSpeed ? verticalSpeed : currentSpeed;
+                            VerticalSpeed = VerticalSpeed > currentSpeed ? VerticalSpeed : currentSpeed;
 
-                            if (verticalSpeed > 4)
+                            if (VerticalSpeed > 4)
                             {
                                 _torso.BodyType = BodyType.Dynamic;
-                                _torso.ApplyLinearImpulse(new Vector2(0, -100 * verticalSpeed));
+                                _torso.ApplyLinearImpulse(new Vector2(0, -100 * VerticalSpeed));
 
-                                if (verticalSpeed > currentSpeed + 1)
+                                if (VerticalSpeed > currentSpeed + 1)
                                 {
-                                    hasJumped = true;
+                                    HasJumped = true;
                                 }
                             }
                         }

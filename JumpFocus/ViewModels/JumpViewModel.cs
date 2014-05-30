@@ -28,6 +28,9 @@ namespace JumpFocus.ViewModels
         private DrawingImage _video;
         private DrawingGroup _drawingGroup;
 
+        private float _readyCounter;
+        private int _countDown = 5;
+
         //physiiiiiics duddddde
         private FP.Dynamics.World _world;
 
@@ -61,6 +64,7 @@ namespace JumpFocus.ViewModels
             {
                 // create a stopwatch for FPS calculation
                 _stopwatch = new Stopwatch();
+                _readyCounter = 0; //user readyness
 
                 _sensor.Open();
                                 
@@ -110,7 +114,7 @@ namespace JumpFocus.ViewModels
                                 stepSeconds = (float)_stopwatch.Elapsed.TotalSeconds;
 
                                 //Stop the game once the player has landed
-                                if (!_gameWorld.hasLanded)
+                                if (!_gameWorld.HasLanded)
                                 {
                                     _world.Step(stepSeconds);
                                 }
@@ -134,9 +138,34 @@ namespace JumpFocus.ViewModels
                                     _avatar.Move(body.Joints, stepSeconds);
 
                                     //player ready
-                                    if (true)
+                                    if (!_avatar.HasJumped && !_avatar.IsReadyToJump)
                                     {
-                                        _avatar.Jump(body.Joints, stepSeconds); 
+                                        if (body.HandLeftState == HandState.Closed && body.HandRightState == HandState.Closed)
+                                        {
+                                            _readyCounter += stepSeconds;
+                                            _gameWorld.Message = (_countDown - _readyCounter).ToString("f");
+                                        }
+                                        else
+                                        {
+                                            _gameWorld.Message = string.Format("Keep both hands closed for {0} sec", _countDown);
+                                            _readyCounter = 0;
+                                        }
+
+                                        if (_readyCounter > _countDown)
+                                        {
+                                            _gameWorld.Message = "JUMP!!";
+                                            _avatar.IsReadyToJump = true;
+                                        }
+                                    }
+
+                                    if (_avatar.IsReadyToJump && !_avatar.HasJumped)
+                                    {
+                                        _avatar.Jump(body.Joints, stepSeconds);
+                                    }
+
+                                    if (_avatar.HasJumped && !string.IsNullOrWhiteSpace(_gameWorld.Message) && !_gameWorld.HasLanded)
+                                    {
+                                        _gameWorld.Message = string.Empty;
                                     }
                                 }
                                 else

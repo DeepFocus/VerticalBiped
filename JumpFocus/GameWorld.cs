@@ -32,8 +32,8 @@ namespace JumpFocus
         private List<Body> _clouds;
         private List<Body> _cats;
 
-        private Brush _greenBrush = new RadialGradientBrush(Color.FromArgb(0, 0, 0, 0), Color.FromArgb(255, 0, 122, 0));
         private Brush _brownBrush = new RadialGradientBrush(Color.FromArgb(0, 0, 0, 0), Color.FromArgb(255, 200, 80, 80));
+        private Brush _greenBrush = new SolidColorBrush(Color.FromArgb(255, 0, 122, 0));
         private Brush _redBrush = new SolidColorBrush(Color.FromArgb(255, 122, 0, 0));
         private Brush _blueBrush = new SolidColorBrush(Color.FromArgb(255, 0, 0, 255));
         private Typeface _typeface = new Typeface("Verdana");
@@ -52,7 +52,9 @@ namespace JumpFocus
         public float WorldHeight { get { return _worldHeight; } }
 
         public int Altitude { get; private set; }
-        public bool hasLanded { get; private set; }
+        public bool HasLanded { get; private set; }
+
+        public string Message { get; set; }
 
         public GameWorld(World world)
         {
@@ -185,9 +187,26 @@ namespace JumpFocus
             //Altitude
             var alt = ConvertUnits.ToSimUnits(_camera.Location.Y);
             alt = _worldHeight - alt;
+            if (alt > Altitude)
+            {
+                Altitude = (int)alt;
+            }
             var altitude = string.Format("Altitude: {0}", alt);
             fText = new FormattedText(altitude, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _blueBrush);
             dc.DrawText(fText, Point.Add(_camera.Location, new Vector(0, 150)));
+
+            //Message is needed
+            if (!string.IsNullOrWhiteSpace(Message))
+            {
+                var messageText = new FormattedText(Message, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 250, _greenBrush);
+                messageText.TextAlignment = TextAlignment.Center;
+                var location = new Point
+                {
+                    X = _camera.X + (_camera.Width / 2),
+                    Y = _camera.Y + (_camera.Height / 4)
+                };
+                dc.DrawText(messageText, location);
+            }
 
             //Draw coins
             foreach (var bodyCoin in _coins)
@@ -295,8 +314,9 @@ namespace JumpFocus
 
             if (fixtureB.CollisionCategories == Category.Cat1)
             {
-                hasLanded = true;
+                HasLanded = true;
                 //end of game
+                Message = string.Format("Your score is {0}", _score + Altitude);
             }
 
             return true;
