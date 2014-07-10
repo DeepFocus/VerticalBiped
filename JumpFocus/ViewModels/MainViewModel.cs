@@ -20,7 +20,7 @@ namespace JumpFocus.ViewModels
 
         public MainViewModel()
         {
-            _sensor = KinectSensor.Default;
+            _sensor = KinectSensor.GetDefault();
 
             _jumpViewModel = new JumpViewModel(_sensor);
 

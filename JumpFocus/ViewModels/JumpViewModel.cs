@@ -29,7 +29,7 @@ namespace JumpFocus.ViewModels
         private DrawingGroup _drawingGroup;
 
         private float _readyCounter;
-        private int _countDown = 5;
+        private int _countDown = 3;
 
         //physiiiiiics duddddde
         private FP.Dynamics.World _world;
@@ -67,8 +67,8 @@ namespace JumpFocus.ViewModels
                 _readyCounter = 0; //user readyness
 
                 _sensor.Open();
-                                
-                _bodies = new Body[_sensor.BodyFrameSource.BodyCount];
+
+                _bodies = new Body[6];
 
                 _drawingGroup = new DrawingGroup();
                 Video = new DrawingImage(_drawingGroup);
@@ -98,94 +98,92 @@ namespace JumpFocus.ViewModels
         /// <param name="e">event arguments</param>
         private void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e)
         {
-            using (var multiSourceFrame = e.FrameReference.AcquireFrame())
+            var multiSourceFrame = e.FrameReference.AcquireFrame();
+            if (multiSourceFrame != null)
             {
-                if (multiSourceFrame != null)
+                using (var bodyFrame = multiSourceFrame.BodyFrameReference.AcquireFrame())
                 {
-                    using (var bodyFrame = multiSourceFrame.BodyFrameReference.AcquireFrame())
+                    if (null != bodyFrame)
                     {
-                        if (null != bodyFrame)
+                        float stepSeconds = 0;
+                        if (_stopwatch.IsRunning)
                         {
-                            float stepSeconds = 0;
-                            if (_stopwatch.IsRunning)
-                            {
-                                _stopwatch.Stop();
-                                //Set next step depending on the kinect FPS rate
-                                stepSeconds = (float)_stopwatch.Elapsed.TotalSeconds;
+                            _stopwatch.Stop();
+                            //Set next step depending on the kinect FPS rate
+                            stepSeconds = (float)_stopwatch.Elapsed.TotalSeconds;
 
-                                //Stop the game once the player has landed
-                                if (!_gameWorld.HasLanded)
-                                {
-                                    _world.Step(stepSeconds);
-                                }
-                                _stopwatch.Reset();
+                            //Stop the game once the player has landed
+                            if (!_gameWorld.HasLanded)
+                            {
+                                _world.Step(stepSeconds);
                             }
-                            if (!_stopwatch.IsRunning)
+                            _stopwatch.Reset();
+                        }
+                        if (!_stopwatch.IsRunning)
+                        {
+                            _stopwatch.Start();
+                        }
+
+                        bodyFrame.GetAndRefreshBodyData(_bodies);
+                        using (var dc = _drawingGroup.Open())
+                        {
+                            _gameWorld.Draw(dc);
+
+                            //We already have a player
+                            if (_currentUserId > 0 && _bodies.Any(b => b.TrackingId == _currentUserId && b.IsTracked == true))
                             {
-                                _stopwatch.Start();
+                                var body = _bodies.First(b => b.TrackingId == _currentUserId);
+
+                                _avatar.Move(body.Joints, stepSeconds);
+
+                                //player ready
+                                if (!_avatar.HasJumped && !_avatar.IsReadyToJump)
+                                {
+                                    if (body.HandLeftState == HandState.Closed && body.HandRightState == HandState.Closed)
+                                    {
+                                        _readyCounter += stepSeconds;
+                                        _gameWorld.Message = (_countDown - _readyCounter).ToString("f");
+                                    }
+                                    else
+                                    {
+                                        _gameWorld.Message = string.Format("Keep both hands closed for {0} sec", _countDown);
+                                        _readyCounter = 0;
+                                    }
+
+                                    if (_readyCounter > _countDown)
+                                    {
+                                        _gameWorld.Message = "JUMP!!";
+                                        _avatar.IsReadyToJump = true;
+                                    }
+                                }
+
+                                if (_avatar.IsReadyToJump && !_avatar.HasJumped)
+                                {
+                                    _avatar.Jump(body.Joints, stepSeconds);
+                                }
+
+                                if (_avatar.HasJumped && !string.IsNullOrWhiteSpace(_gameWorld.Message) && !_gameWorld.HasLanded)
+                                {
+                                    _gameWorld.Message = string.Empty;
+                                }
+                            }
+                            else
+                            {
+                                foreach (var body in _bodies)
+                                {
+                                    if (body.IsTracked)
+                                    {
+                                        _currentUserId = body.TrackingId;
+                                        _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 10f));
+                                        break;
+                                    }
+                                }
                             }
 
-                            bodyFrame.GetAndRefreshBodyData(_bodies);
-                            using (var dc = _drawingGroup.Open())
+                            if (null != _avatar)
                             {
-                                _gameWorld.Draw(dc);
-
-                                //We already have a player
-                                if (_currentUserId > 0 && _bodies.Any(b => b.TrackingId == _currentUserId && b.IsTracked == true))
-                                {
-                                    var body = _bodies.First(b => b.TrackingId == _currentUserId);
-                                    
-                                    _avatar.Move(body.Joints, stepSeconds);
-
-                                    //player ready
-                                    if (!_avatar.HasJumped && !_avatar.IsReadyToJump)
-                                    {
-                                        if (body.HandLeftState == HandState.Closed && body.HandRightState == HandState.Closed)
-                                        {
-                                            _readyCounter += stepSeconds;
-                                            _gameWorld.Message = (_countDown - _readyCounter).ToString("f");
-                                        }
-                                        else
-                                        {
-                                            _gameWorld.Message = string.Format("Keep both hands closed for {0} sec", _countDown);
-                                            _readyCounter = 0;
-                                        }
-
-                                        if (_readyCounter > _countDown)
-                                        {
-                                            _gameWorld.Message = "JUMP!!";
-                                            _avatar.IsReadyToJump = true;
-                                        }
-                                    }
-
-                                    if (_avatar.IsReadyToJump && !_avatar.HasJumped)
-                                    {
-                                        _avatar.Jump(body.Joints, stepSeconds);
-                                    }
-
-                                    if (_avatar.HasJumped && !string.IsNullOrWhiteSpace(_gameWorld.Message) && !_gameWorld.HasLanded)
-                                    {
-                                        _gameWorld.Message = string.Empty;
-                                    }
-                                }
-                                else
-                                {
-                                    foreach (var body in _bodies)
-                                    {
-                                        if (body.IsTracked)
-                                        {
-                                            _currentUserId = body.TrackingId;
-                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 10f));
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if (null != _avatar)
-                                {
-                                    _avatar.Draw(dc);
-                                    _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
-                                }
+                                _avatar.Draw(dc);
+                                _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
                             }
                         }
                     }

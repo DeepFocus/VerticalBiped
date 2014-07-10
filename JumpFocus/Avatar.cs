@@ -578,7 +578,7 @@ namespace JumpFocus
                 //Jump
                 if (Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
                 {
-                    var currentPosition = Joints[MK.JointType.HandRight].Position;
+                    var currentPosition = Joints[MK.JointType.SpineMid].Position;
                     if (_previousPosition != default(MK.CameraSpacePoint))
                     {
                         if (HasJumped)

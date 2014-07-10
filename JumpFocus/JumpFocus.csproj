@@ -85,13 +85,11 @@
     <Compile Include="Avatar.cs" />
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="Coin.cs" />
-    <Compile Include="Doll.cs" />
     <Compile Include="GameWorld.cs" />
     <Compile Include="Member.cs" />
     <Compile Include="Models\History.cs" />
     <Compile Include="Models\Player.cs" />
     <Compile Include="ViewModels\JumpViewModel.cs" />
-    <Compile Include="ViewModels\JumpViewModel1.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\WelcomeViewModel.cs" />
   </ItemGroup>
