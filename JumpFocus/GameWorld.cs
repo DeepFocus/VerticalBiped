@@ -32,10 +32,9 @@ namespace JumpFocus
         private List<Body> _clouds;
         private List<Body> _cats;
 
-        private Brush _brownBrush = new RadialGradientBrush(Color.FromArgb(0, 0, 0, 0), Color.FromArgb(255, 200, 80, 80));
-        private Brush _greenBrush = new SolidColorBrush(Color.FromArgb(255, 0, 122, 0));
-        private Brush _redBrush = new SolidColorBrush(Color.FromArgb(255, 122, 0, 0));
-        private Brush _blueBrush = new SolidColorBrush(Color.FromArgb(255, 0, 0, 255));
+        private Brush _floorBrush = new SolidColorBrush(Color.FromRgb(236, 124, 95));
+        private Brush _skyBrush = new SolidColorBrush(Color.FromRgb(236, 241, 237));
+        private Brush _textBrush = new SolidColorBrush(Color.FromRgb(59, 66, 78));
         private Typeface _typeface = new Typeface("Verdana");
         private Uri _cloudUri = new Uri("pack://application:,,,/Resources/Images/cloud.png");
         private Uri _coinUri = new Uri("pack://application:,,,/Resources/Images/coin.png");
@@ -151,7 +150,7 @@ namespace JumpFocus
                 cat.CollisionCategories = Category.Cat3;
                 cat.CollidesWith = Category.Cat1;
 
-                float speed = rand.Next(0, 2) == 1 ? rand.Next(1000, 10000) : -rand.Next(1000, 10000);
+                float speed = rand.Next(0, 2) == 1 ? rand.Next(1000, 5000) : -rand.Next(1000, 5000);
                 cat.ApplyLinearImpulse(new Vector2(speed, 0));
                 _cats.Add(cat);
             }
@@ -159,29 +158,31 @@ namespace JumpFocus
 
         public void Draw(DrawingContext dc)
         {
-            //Blackground
-            var black = Color.FromArgb(255, 0, 0, 0);
-            var background = new SolidColorBrush(black);
+            //Background
             var bg = new RectangleGeometry(_camera);
-            dc.DrawGeometry(background, null, bg);
+            dc.DrawGeometry(_skyBrush, null, bg);
 
-            //Floor
-            var floorRect = new Rect
+            var floorHeight = (ConvertUnits.ToDisplayUnits(_cameraHeight) + _camera.Y) - ConvertUnits.ToDisplayUnits(_worldHeight);
+            if (floorHeight > 0)
             {
-                X = _camera.X,
-                Y = ConvertUnits.ToDisplayUnits(_worldHeight),
-                Width = ConvertUnits.ToDisplayUnits(_cameraWidth) - 1,
-                Height = 10
-            };
-            var floor = new RectangleGeometry(floorRect);
-            if (bg.FillContains(floor))
-            {
-                dc.DrawGeometry(_greenBrush, null, floor);
+                //Floor
+                var floorRect = new Rect
+                {
+                    X = _camera.X,
+                    Y = ConvertUnits.ToDisplayUnits(_worldHeight),
+                    Width = ConvertUnits.ToDisplayUnits(_cameraWidth) - 1,
+                    Height = floorHeight - 1
+                };
+                var floor = new RectangleGeometry(floorRect);
+                if (bg.FillContains(floor))
+                {
+                    dc.DrawGeometry(_floorBrush, null, floor);
+                }
             }
 
             //Score display
             var score = string.Format("Score: {0}", _score);
-            var fText = new FormattedText(score, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _blueBrush);
+            var fText = new FormattedText(score, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _textBrush);
             dc.DrawText(fText, _camera.Location);
 
             //Altitude
@@ -192,13 +193,13 @@ namespace JumpFocus
                 Altitude = (int)alt;
             }
             var altitude = string.Format("Altitude: {0}", alt);
-            fText = new FormattedText(altitude, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _blueBrush);
+            fText = new FormattedText(altitude, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _textBrush);
             dc.DrawText(fText, Point.Add(_camera.Location, new Vector(0, 150)));
 
             //Message is needed
             if (!string.IsNullOrWhiteSpace(Message))
             {
-                var messageText = new FormattedText(Message, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 250, _greenBrush);
+                var messageText = new FormattedText(Message, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 250, _textBrush);
                 messageText.TextAlignment = TextAlignment.Center;
                 var location = new Point
                 {
@@ -266,11 +267,11 @@ namespace JumpFocus
                 {
                     if (cat.LinearVelocity.X > 0)
                     {
-                        dc.DrawImage(_catImg, imgContainer);
+                        dc.DrawImage(_catReversedImg, imgContainer);
                     }
                     else
                     {
-                        dc.DrawImage(_catReversedImg, imgContainer);
+                        dc.DrawImage(_catImg, imgContainer);
                     }
                 }
             }
@@ -310,8 +311,6 @@ namespace JumpFocus
 
         bool _anchor_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
-            var body = fixtureB.Body;
-
             if (fixtureB.CollisionCategories == Category.Cat1)
             {
                 HasLanded = true;

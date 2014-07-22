@@ -58,6 +58,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Caliburn.Micro.1.5.2\lib\net45\System.Windows.Interactivity.dll</HintPath>
     </Reference>
@@ -138,8 +139,19 @@
   <ItemGroup>
     <Content Include="Lib\Microsoft.Kinect.dll" />
     <Resource Include="Resources\Images\cat.png" />
-    <Resource Include="Resources\Images\coin.png" />
+    <Resource Include="Resources\Images\Avatar\Head.png" />
+    <Resource Include="Resources\Images\Avatar\LowerLeftArm.png" />
+    <Resource Include="Resources\Images\Avatar\LowerLeftLeg.png" />
+    <Resource Include="Resources\Images\Avatar\LowerRightArm.png" />
+    <Resource Include="Resources\Images\Avatar\LowerRightLeg.png" />
+    <Resource Include="Resources\Images\Avatar\Torso.png" />
+    <Resource Include="Resources\Images\Avatar\UpperLeftArm.png" />
+    <Resource Include="Resources\Images\Avatar\UpperLeftLeg.png" />
+    <Resource Include="Resources\Images\Avatar\UpperRightArm.png" />
+    <Resource Include="Resources\Images\Avatar\UpperRightLeg.png" />
+    <Resource Include="Resources\Images\background.png" />
     <Resource Include="Resources\Images\cloud.png" />
+    <Resource Include="Resources\Images\coin.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Farseer Physics Engine 3.5\Farseer Physics.csproj">
@@ -164,6 +176,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

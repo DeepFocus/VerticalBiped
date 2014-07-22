@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MK = Microsoft.Kinect;
@@ -46,6 +47,17 @@ namespace JumpFocus
         private Body _upperRightLeg;
         private RectangleGeometry _upperRightLegGeo;
 
+        private readonly BitmapImage _torsoImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/Torso.png"));
+        private readonly BitmapImage _headImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/Head.png"));
+        private readonly BitmapImage _lowerLeftArmImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/LowerLeftArm.png"));
+        private readonly BitmapImage _lowerLeftLegImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/LowerLeftLeg.png"));
+        private readonly BitmapImage _lowerRightArmImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/LowerRightArm.png"));
+        private readonly BitmapImage _lowerRightLegImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/LowerRightLeg.png"));
+        private readonly BitmapImage _upperLeftArmImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/UpperLeftArm.png"));
+        private readonly BitmapImage _upperLeftLegImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/UpperLeftLeg.png"));
+        private readonly BitmapImage _upperRightArmImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/UpperRightArm.png"));
+        private readonly BitmapImage _upperRightLegImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/UpperRightLeg.png"));
+
         private RevoluteJoint _jRightArm;
         private RevoluteJoint _jRightArmBody;
         private RevoluteJoint _jLeftArm;
@@ -63,9 +75,9 @@ namespace JumpFocus
         public bool IsReadyToJump { get; set; }
         public float VerticalSpeed { get; private set; }
 
-        public Avatar(World World, Vector2 position)
+        public Avatar(World world, Vector2 position)
         {
-            _world = World;
+            _world = world;
             CreateBody(position);
             CreateJoints();
         }
@@ -104,36 +116,19 @@ namespace JumpFocus
             );
 
             //Torso
-            //_torso = BodyFactory.CreateRoundedRectangle(_world, 2f, 4f, 0.5f, 0.7f, 2, 10f);
             _torso = BodyFactory.CreateRectangle(_world, 2f, 4f, 10f);
-            //_torso.BodyType = BodyType.Dynamic;
-            //_torso.BodyType = BodyType.Kinematic;
             _torso.Mass = 5f;
             _torso.Position = position + new Vector2(0f, 3f);
 
             _torsoGeo = new RectangleGeometry(
                 new Rect
                 {
-                    //The center is the center in Geometry, not the top left
-                    X = ConvertUnits.ToDisplayUnits(_torso.Position.X) + 1f,
-                    Y = ConvertUnits.ToDisplayUnits(_torso.Position.Y) + 2f,
+                    X = ConvertUnits.ToDisplayUnits(_torso.Position.X),
+                    Y = ConvertUnits.ToDisplayUnits(_torso.Position.Y),
                     Width = ConvertUnits.ToDisplayUnits(2f),
                     Height = ConvertUnits.ToDisplayUnits(4f)
                 }
             );
-
-            //_torsoGeo = new RectangleGeometry(
-            //    new Rect
-            //    {
-            //        //The center is the center in Geometry, not the top left
-            //        X = ConvertUnits.ToDisplayUnits(_torso.Position.X) + 1f,
-            //        Y = ConvertUnits.ToDisplayUnits(_torso.Position.Y) + 2f,
-            //        Width = ConvertUnits.ToDisplayUnits(2f),
-            //        Height = ConvertUnits.ToDisplayUnits(4f)
-            //    },
-            //    ConvertUnits.ToDisplayUnits(0.5f),
-            //    ConvertUnits.ToDisplayUnits(0.7f)
-            //);
 
             //Left Arm
             _lowerLeftArm = BodyFactory.CreateRectangle(_world, 0.45f, 1f, ArmDensity);
@@ -349,10 +344,7 @@ namespace JumpFocus
 
         public void Draw(DrawingContext dc)
         {
-            var black = Color.FromArgb(255, 0, 0, 0);
             var red = Color.FromArgb(255, 255, 0, 0);
-
-            var background = new SolidColorBrush(black);
             var brush = new SolidColorBrush(red);
 
             if (double.IsNaN(_head.Position.X) || double.IsNaN(_head.Position.Y))
@@ -365,13 +357,14 @@ namespace JumpFocus
                 X = ConvertUnits.ToDisplayUnits(_head.Position.X),
                 Y = ConvertUnits.ToDisplayUnits(_head.Position.Y)
             };
-            dc.DrawGeometry(brush, null, _headGeo);
+
+            dc.DrawImage(_headImg, new Rect(_headGeo.Center, new Size(_headImg.Width, _headImg.Height)));
 
             _torsoGeo.Rect = new Rect
             {
                 //The center is the center in Geometry, not the top left
-                X = ConvertUnits.ToDisplayUnits(_torso.Position.X) - _torsoGeo.Rect.Width / 2,
-                Y = ConvertUnits.ToDisplayUnits(_torso.Position.Y) - _torsoGeo.Rect.Height / 2,
+                X = ConvertUnits.ToDisplayUnits(_torso.Position.X),
+                Y = ConvertUnits.ToDisplayUnits(_torso.Position.Y),
                 Width = _torsoGeo.Rect.Width,
                 Height = _torsoGeo.Rect.Height
             };
@@ -379,7 +372,11 @@ namespace JumpFocus
                 MathHelper.ToDegrees(_torso.Rotation),
                 ConvertUnits.ToDisplayUnits(_torso.Position.X),
                 ConvertUnits.ToDisplayUnits(_torso.Position.Y));
-            dc.DrawGeometry(brush, null, _torsoGeo);
+
+            var transform = (RotateTransform)_torsoGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_torsoImg, _torsoGeo.Rect);
+            dc.Pop();
 
             _upperLeftArmGeo.Rect = new Rect
             {
@@ -389,7 +386,11 @@ namespace JumpFocus
                 Height = _upperLeftArmGeo.Rect.Height
             };
             _upperLeftArmGeo.Transform = new RotateTransform(MathHelper.ToDegrees(_upperLeftArm.Rotation), _upperLeftArmGeo.Rect.X, _upperLeftArmGeo.Rect.Y);
-            dc.DrawGeometry(brush, null, _upperLeftArmGeo);
+
+            transform = (RotateTransform)_upperLeftArmGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_upperLeftArmImg, _upperLeftArmGeo.Rect);
+            dc.Pop();
 
             _lowerLeftArmGeo.Rect = new Rect
             {
@@ -399,7 +400,11 @@ namespace JumpFocus
                 Height = _lowerLeftArmGeo.Rect.Height
             };
             _lowerLeftArmGeo.Transform = new RotateTransform(MathHelper.ToDegrees(_lowerLeftArm.Rotation), _lowerLeftArmGeo.Rect.X, _lowerLeftArmGeo.Rect.Y);
-            dc.DrawGeometry(brush, null, _lowerLeftArmGeo);
+
+            transform = (RotateTransform)_lowerLeftArmGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_lowerLeftArmImg, _lowerLeftArmGeo.Rect);
+            dc.Pop();
 
             _upperRightArmGeo.Rect = new Rect
             {
@@ -409,7 +414,12 @@ namespace JumpFocus
                 Height = _upperRightArmGeo.Rect.Height
             };
             _upperRightArmGeo.Transform = new RotateTransform(MathHelper.ToDegrees(_upperRightArm.Rotation), _upperRightArmGeo.Rect.X, _upperRightArmGeo.Rect.Y);
-            dc.DrawGeometry(brush, null, _upperRightArmGeo);
+
+            transform = (RotateTransform)_upperRightArmGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_upperRightArmImg, _upperRightArmGeo.Rect);
+            dc.Pop();
+
 
             _lowerRightArmGeo.Rect = new Rect
             {
@@ -418,8 +428,13 @@ namespace JumpFocus
                 Width = _lowerRightArmGeo.Rect.Width,
                 Height = _lowerRightArmGeo.Rect.Height
             };
+
             _lowerRightArmGeo.Transform = new RotateTransform(MathHelper.ToDegrees(_lowerRightArm.Rotation), _lowerRightArmGeo.Rect.X, _lowerRightArmGeo.Rect.Y);
-            dc.DrawGeometry(brush, null, _lowerRightArmGeo);
+
+            transform = (RotateTransform)_lowerRightArmGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_lowerRightArmImg, _lowerRightArmGeo.Rect);
+            dc.Pop();
 
             _upperLeftLegGeo.Rect = new Rect
             {
@@ -429,7 +444,11 @@ namespace JumpFocus
                 Height = _upperLeftLegGeo.Rect.Height
             };
             _upperLeftLegGeo.Transform = new RotateTransform(MathHelper.ToDegrees(_upperLeftLeg.Rotation), _upperLeftLegGeo.Rect.X, _upperLeftLegGeo.Rect.Y);
-            dc.DrawGeometry(brush, null, _upperLeftLegGeo);
+
+            transform = (RotateTransform)_upperLeftLegGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_upperLeftLegImg, _upperLeftLegGeo.Rect);
+            dc.Pop();
 
             _lowerLeftLegGeo.Rect = new Rect
             {
@@ -439,7 +458,11 @@ namespace JumpFocus
                 Height = _lowerLeftLegGeo.Rect.Height
             };
             _lowerLeftLegGeo.Transform = new RotateTransform(MathHelper.ToDegrees(_lowerLeftLeg.Rotation), _lowerLeftLegGeo.Rect.X, _lowerLeftLegGeo.Rect.Y);
-            dc.DrawGeometry(brush, null, _lowerLeftLegGeo);
+
+            transform = (RotateTransform)_lowerLeftLegGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_lowerLeftLegImg, _lowerLeftLegGeo.Rect);
+            dc.Pop();
 
             _upperRightLegGeo.Rect = new Rect
             {
@@ -449,7 +472,11 @@ namespace JumpFocus
                 Height = _upperRightLegGeo.Rect.Height
             };
             _upperRightLegGeo.Transform = new RotateTransform(MathHelper.ToDegrees(_upperRightLeg.Rotation), _upperRightLegGeo.Rect.X, _upperRightLegGeo.Rect.Y);
-            dc.DrawGeometry(brush, null, _upperRightLegGeo);
+
+            transform = (RotateTransform)_upperRightLegGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_upperRightLegImg, _upperRightLegGeo.Rect);
+            dc.Pop();
 
             _lowerRightLegGeo.Rect = new Rect
             {
@@ -459,7 +486,11 @@ namespace JumpFocus
                 Height = _lowerRightLegGeo.Rect.Height
             };
             _lowerRightLegGeo.Transform = new RotateTransform(MathHelper.ToDegrees(_lowerRightLeg.Rotation), _lowerRightLegGeo.Rect.X, _lowerRightLegGeo.Rect.Y);
-            dc.DrawGeometry(brush, null, _lowerRightLegGeo);
+
+            transform = (RotateTransform)_lowerRightLegGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_lowerRightLegImg, _lowerRightLegGeo.Rect);
+            dc.Pop();
         }
 
         public void Move(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
@@ -570,15 +601,15 @@ namespace JumpFocus
 
         public void Jump(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
         {
-            if (IsReadyToJump && Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
+            if (IsReadyToJump && Joints[MK.JointType.HandRight].TrackingState == MK.TrackingState.Tracked)
             {
                 float speedFactor = 2f;
                 StepSeconds = StepSeconds / speedFactor;
 
                 //Jump
-                if (Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
+                if (Joints[MK.JointType.HandRight].TrackingState == MK.TrackingState.Tracked)
                 {
-                    var currentPosition = Joints[MK.JointType.SpineMid].Position;
+                    var currentPosition = Joints[MK.JointType.HandRight].Position;
                     if (_previousPosition != default(MK.CameraSpacePoint))
                     {
                         if (HasJumped)

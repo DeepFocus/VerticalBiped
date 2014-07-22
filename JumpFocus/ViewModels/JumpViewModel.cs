@@ -18,8 +18,7 @@ namespace JumpFocus.ViewModels
 {
     class JumpViewModel : Screen
     {
-        private Stopwatch _stopwatch = null;
-        private int bytesPerPixel = (PixelFormats.Bgr32.BitsPerPixel + 7) / 8;
+        private Stopwatch _stopwatch;
 
         private KinectSensor _sensor;
         private MultiSourceFrameReader _reader;
@@ -34,12 +33,8 @@ namespace JumpFocus.ViewModels
         //physiiiiiics duddddde
         private FP.Dynamics.World _world;
 
-        private Brush _greenBrush = new RadialGradientBrush(Color.FromArgb(0, 0, 0, 0), Color.FromArgb(255, 0, 122, 0));
-        private Brush _brownBrush = new RadialGradientBrush(Color.FromArgb(0, 0, 0, 0), Color.FromArgb(255, 200, 80, 80));
-        private Brush _redBrush = new SolidColorBrush(Color.FromArgb(255, 122, 0, 0));
-
         //Game data
-        private ulong _currentUserId = 0;
+        private ulong _currentUserId;
         private Avatar _avatar;
         private GameWorld _gameWorld;
 
@@ -53,9 +48,9 @@ namespace JumpFocus.ViewModels
             }
         }
 
-        public JumpViewModel(KinectSensor KinectSensor)
+        public JumpViewModel(KinectSensor kinectSensor)
         {
-            _sensor = KinectSensor;
+            _sensor = kinectSensor;
         }
 
         protected override void OnActivate()
@@ -130,7 +125,7 @@ namespace JumpFocus.ViewModels
                             _gameWorld.Draw(dc);
 
                             //We already have a player
-                            if (_currentUserId > 0 && _bodies.Any(b => b.TrackingId == _currentUserId && b.IsTracked == true))
+                            if (_currentUserId > 0 && _bodies.Any(b => b.TrackingId == _currentUserId && b.IsTracked))
                             {
                                 var body = _bodies.First(b => b.TrackingId == _currentUserId);
 
@@ -139,7 +134,7 @@ namespace JumpFocus.ViewModels
                                 //player ready
                                 if (!_avatar.HasJumped && !_avatar.IsReadyToJump)
                                 {
-                                    if (body.HandLeftState == HandState.Closed && body.HandRightState == HandState.Closed)
+                                    if (body.HandRightState == HandState.Closed )//&& body.HandRightState == HandState.Closed)
                                     {
                                         _readyCounter += stepSeconds;
                                         _gameWorld.Message = (_countDown - _readyCounter).ToString("f");
