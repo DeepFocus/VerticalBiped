@@ -1,4 +1,6 @@
 ﻿using Caliburn.Micro;
+using JumpFocus.DAL;
+using JumpFocus.Models;
 using Microsoft.Kinect;
 using Microsoft.Xna.Framework;
 using System;
@@ -6,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +26,12 @@ namespace JumpFocus.ViewModels
         private KinectSensor _sensor;
         private MultiSourceFrameReader _reader;
         private Body[] _bodies;
+        //Screenshot setup
+        private byte[] _colorPixels;
+        private int _bytesPerPixel;
+        private ushort[] _depthFrameData;
+        private byte[] _bodyIndexFrameData;
+        private ColorSpacePoint[] _colorPoints;
 
         private DrawingImage _video;
         private DrawingGroup _drawingGroup;
@@ -37,6 +46,7 @@ namespace JumpFocus.ViewModels
         private ulong _currentUserId;
         private Avatar _avatar;
         private GameWorld _gameWorld;
+        private Player _player;
 
         public DrawingImage Video
         {
@@ -63,12 +73,26 @@ namespace JumpFocus.ViewModels
 
                 _sensor.Open();
 
-                _bodies = new Body[6];
+                _bodies = new Body[6];//SDK doesn't provide this number anymore
 
                 _drawingGroup = new DrawingGroup();
                 Video = new DrawingImage(_drawingGroup);
 
-                _reader = _sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Body);
+                _reader = _sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Body | FrameSourceTypes.Color | FrameSourceTypes.Depth | FrameSourceTypes.BodyIndex);
+
+                // create the colorFrameDescription from the ColorFrameSource using Bgra format
+                var colorFrameDescription = _sensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
+                // rgba is 4 bytes per pixel
+                _bytesPerPixel = (int)colorFrameDescription.BytesPerPixel;
+                _colorPixels = new byte[colorFrameDescription.Width * colorFrameDescription.Height * _bytesPerPixel];
+
+                FrameDescription depthFrameDescription = _sensor.DepthFrameSource.FrameDescription;
+                int depthWidth = depthFrameDescription.Width;
+                int depthHeight = depthFrameDescription.Height;
+                // allocate space to put the pixels being received and converted
+                _depthFrameData = new ushort[depthWidth * depthHeight];
+                _bodyIndexFrameData = new byte[depthWidth * depthHeight];
+                _colorPoints = new ColorSpacePoint[depthWidth * depthHeight];
 
                 _world = new FP.Dynamics.World(new Vector2(0, 9.82f));
                 FP.ConvertUnits.SetDisplayUnitToSimUnitRatio(128f);
@@ -97,8 +121,11 @@ namespace JumpFocus.ViewModels
             if (multiSourceFrame != null)
             {
                 using (var bodyFrame = multiSourceFrame.BodyFrameReference.AcquireFrame())
+                using (var colorFrame = multiSourceFrame.ColorFrameReference.AcquireFrame())
+                using (var depthFrame = multiSourceFrame.DepthFrameReference.AcquireFrame())
+                using (var bodyIndexFrame = multiSourceFrame.BodyIndexFrameReference.AcquireFrame())
                 {
-                    if (null != bodyFrame)
+                    if (null != bodyFrame && null != colorFrame && null != depthFrame && null != bodyIndexFrame)
                     {
                         float stepSeconds = 0;
                         if (_stopwatch.IsRunning)
@@ -134,7 +161,7 @@ namespace JumpFocus.ViewModels
                                 //player ready
                                 if (!_avatar.HasJumped && !_avatar.IsReadyToJump)
                                 {
-                                    if (body.HandRightState == HandState.Closed )//&& body.HandRightState == HandState.Closed)
+                                    if (body.HandRightState == HandState.Closed)//&& body.HandRightState == HandState.Closed)
                                     {
                                         _readyCounter += stepSeconds;
                                         _gameWorld.Message = (_countDown - _readyCounter).ToString("f");
@@ -154,7 +181,14 @@ namespace JumpFocus.ViewModels
 
                                 if (_avatar.IsReadyToJump && !_avatar.HasJumped)
                                 {
-                                    _avatar.Jump(body.Joints, stepSeconds);
+                                    if (_avatar.Jump(body.Joints, stepSeconds))
+                                    {
+                                        //mugshot
+                                        var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body);
+                                        var filePath = SaveHeadshot(headBitmap);
+
+                                        _avatar.player.Mugshot = filePath;
+                                    }
                                 }
 
                                 if (_avatar.HasJumped && !string.IsNullOrWhiteSpace(_gameWorld.Message) && !_gameWorld.HasLanded)
@@ -164,12 +198,16 @@ namespace JumpFocus.ViewModels
                             }
                             else
                             {
-                                foreach (var body in _bodies)
+                                for (byte index = 0; index < _bodies.Length; index++)
                                 {
-                                    if (body.IsTracked)
+                                    if (_bodies[index].IsTracked)
                                     {
-                                        _currentUserId = body.TrackingId;
-                                        _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 10f));
+                                        _currentUserId = _bodies[index].TrackingId;
+                                        _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 10f))
+                                        {
+                                            player = new Player(),
+                                            BodyIndex = index
+                                        };
                                         break;
                                     }
                                 }
@@ -179,11 +217,159 @@ namespace JumpFocus.ViewModels
                             {
                                 _avatar.Draw(dc);
                                 _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
+
+                                //if (_gameWorld.HasLanded)
+                                //{
+                                //    _avatar.player.Dogecoins = _gameWorld.Coins;
+                                //    _avatar.player.Name = _avatar.BodyIndex.ToString();
+
+                                //    var db = new JumpFocusContext();
+                                //    db.Players.Add(_avatar.player);
+                                //    db.SaveChanges();
+                                //}
                             }
                         }
                     }
                 }
             }
+        }
+
+        private WriteableBitmap RenderHeadshot(ColorFrame colorFrame, DepthFrame depthFrame, BodyIndexFrame bodyIndexFrame, Body body)
+        {
+            var mapper = _sensor.CoordinateMapper;
+            var head = mapper.MapCameraPointToDepthSpace(body.Joints[JointType.Head].Position);
+            var spine = mapper.MapCameraPointToDepthSpace(body.Joints[JointType.SpineShoulder].Position);
+
+            if (colorFrame.RawColorImageFormat == ColorImageFormat.Bgra)
+            {
+                colorFrame.CopyRawFrameDataToArray(_colorPixels);
+            }
+            else
+            {
+                colorFrame.CopyConvertedFrameDataToArray(_colorPixels, ColorImageFormat.Bgra);
+            }
+
+            var colorFrameDescription = colorFrame.FrameDescription;
+            var colorWidth = colorFrameDescription.Width;
+            var colorHeight = colorFrameDescription.Height;
+
+            var depthFrameDescription = depthFrame.FrameDescription;
+            var depthWidth = depthFrameDescription.Width;
+            var depthHeight = depthFrameDescription.Height;
+
+            if ((depthWidth * depthHeight) == _depthFrameData.Length)
+            {
+                depthFrame.CopyFrameDataToArray(_depthFrameData);
+            }
+            _sensor.CoordinateMapper.MapDepthFrameToColorSpace(_depthFrameData, _colorPoints);
+
+
+            if (bodyIndexFrame != null)
+            {
+                var bodyIndexFrameDescription = bodyIndexFrame.FrameDescription;
+                var bodyIndexWidth = bodyIndexFrameDescription.Width;
+                var bodyIndexHeight = bodyIndexFrameDescription.Height;
+
+                if ((bodyIndexWidth * bodyIndexHeight) == _bodyIndexFrameData.Length)
+                {
+                    bodyIndexFrame.CopyFrameDataToArray(_bodyIndexFrameData);
+                }
+            }
+
+            var displayPixels = new byte[depthWidth * depthHeight * _bytesPerPixel];
+            // loop over each row and column of the depth
+            for (int y = 0; y < depthHeight; ++y)
+            {
+                for (int x = 0; x < depthWidth; ++x)
+                {
+                    // calculate index into depth array
+                    int depthIndex = (y * depthWidth) + x;
+
+                    byte player = _bodyIndexFrameData[depthIndex];
+                    // retrieve the depth to color mapping for the current depth pixel
+                    ColorSpacePoint colorPoint = _colorPoints[depthIndex];
+
+                    // make sure the depth pixel maps to a valid point in color space
+                    int colorX = (int)Math.Floor(colorPoint.X + 0.5);
+                    int colorY = (int)Math.Floor(colorPoint.Y + 0.5);
+                    if ((colorX >= 0) && (colorX < colorWidth) && (colorY >= 0) && (colorY < colorHeight))
+                    {
+                        // set source for copy to the color pixel
+                        int displayIndex = depthIndex * _bytesPerPixel;
+                        // if we're tracking a player for the current pixel, sets its color and alpha to full
+                        if (player == _avatar.BodyIndex)
+                        {
+                            // calculate index into color array
+                            int colorIndex = ((colorY * colorWidth) + colorX) * _bytesPerPixel;
+                            displayPixels[displayIndex++] = _colorPixels[colorIndex++];//blue
+                            displayPixels[displayIndex++] = _colorPixels[colorIndex++];//green
+                            displayPixels[displayIndex++] = _colorPixels[colorIndex];//red
+                            displayPixels[displayIndex] = 0xff;//alpha
+                        }
+                        else
+                        {
+                            displayPixels[displayIndex + 3] = 0x00;//alpha
+                        }
+                    }
+                }
+            }
+
+            var colorBitmap = new WriteableBitmap(depthFrameDescription.Width, depthFrameDescription.Height, 96.0, 96.0,
+                PixelFormats.Bgra32, null);
+            colorBitmap.WritePixels(
+                new Int32Rect(0, 0, depthFrameDescription.Width, depthFrameDescription.Height),
+                displayPixels,
+                colorBitmap.PixelWidth * _bytesPerPixel, 0);
+
+
+            var headShot = new Int32Rect
+            {
+                X = (int)(head.X + (head.Y - spine.Y)),
+                Y = (int)(head.Y + (head.Y - spine.Y)),
+                Width = (int)((spine.Y - head.Y) * 2),
+                Height = (int)((spine.Y - head.Y) * 2)
+            };
+
+            var headBitmap = new WriteableBitmap(headShot.Width, headShot.Height, 96.0, 96.0, PixelFormats.Bgra32, null);
+            var headPixels = new byte[headShot.Width * headShot.Height * _bytesPerPixel];
+            colorBitmap.CopyPixels(headShot, headPixels, headShot.Width * _bytesPerPixel, 0);
+
+            headBitmap.WritePixels(new Int32Rect(0, 0, headShot.Width, headShot.Height), headPixels,
+                headBitmap.PixelWidth * _bytesPerPixel, 0);
+            return headBitmap;
+        }
+
+        private string SaveHeadshot(WriteableBitmap input)
+        {
+            if (input != null)
+            {
+                // create a png bitmap encoder which knows how to save a .png file
+                BitmapEncoder encoder = new PngBitmapEncoder();
+
+                // create frame from the writable bitmap and add to encoder
+                encoder.Frames.Add(BitmapFrame.Create(input));
+
+                string time = DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
+
+                string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+
+                string path = Path.Combine(myPhotos, "KinectScreenshot-Color-" + time + ".png");
+
+                // write the new file to disk
+                try
+                {
+                    // FileStream is IDisposable
+                    using (var fs = new FileStream(path, FileMode.Create))
+                    {
+                        encoder.Save(fs);
+
+                        return path;
+                    }
+                }
+                catch { }
+            }
+
+            return null;
         }
 
         protected override void OnDeactivate(bool close)

@@ -14,22 +14,28 @@ namespace JumpFocus.ViewModels
 {
     class MainViewModel : Conductor<IScreen>
     {
-        private KinectSensor _sensor;
-
-        private JumpViewModel _jumpViewModel;
+        private readonly JumpViewModel _jumpViewModel;
+        private readonly WelcomeViewModel _welcomeViewModel;
 
         public MainViewModel()
         {
-            _sensor = KinectSensor.GetDefault();
+            var sensor = KinectSensor.GetDefault();
 
-            _jumpViewModel = new JumpViewModel(_sensor);
+            _jumpViewModel = new JumpViewModel(sensor);
+            _welcomeViewModel = new WelcomeViewModel(sensor);
 
-            ShowJump();
+            //ShowJump();
+            ShowWelcome();
         }
 
         public void ShowJump()
         {
             ActivateItem(_jumpViewModel);
+        }
+
+        public void ShowWelcome()
+        {
+            ActivateItem(_welcomeViewModel);
         }
     }
 }

@@ -2,6 +2,7 @@
 using FarseerPhysics.Dynamics;
 using FarseerPhysics.Dynamics.Joints;
 using FarseerPhysics.Factories;
+using JumpFocus.Models;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ namespace JumpFocus
         private Body _torso;
         private RectangleGeometry _torsoGeo;
         private Body _head;
-        private EllipseGeometry _headGeo;
+        private RectangleGeometry _headGeo;
 
         private Body _lowerLeftArm;
         private RectangleGeometry _lowerLeftArmGeo;
@@ -74,6 +75,8 @@ namespace JumpFocus
         public bool HasJumped { get; private set; }
         public bool IsReadyToJump { get; set; }
         public float VerticalSpeed { get; private set; }
+        public byte BodyIndex { get; set; }
+        public Player player { get; set; }
 
         public Avatar(World world, Vector2 position)
         {
@@ -99,170 +102,170 @@ namespace JumpFocus
         private void CreateBody(Vector2 position)
         {
             //Head
-            _head = BodyFactory.CreateCircle(_world, 0.9f, 10f);
+            _head = BodyFactory.CreateCircle(_world, ConvertUnits.ToSimUnits(_headImg.Width), 10f);
             _head.BodyType = BodyType.Dynamic;
             _head.AngularDamping = LimbAngularDamping;
             _head.Mass = 2f;
             _head.Position = position;
 
-            _headGeo = new EllipseGeometry(
-                new Point
+            _headGeo = new RectangleGeometry(
+                new Rect
                 {
                     X = ConvertUnits.ToDisplayUnits(_head.Position.X),
-                    Y = ConvertUnits.ToDisplayUnits(_head.Position.Y)
-                },
-                ConvertUnits.ToDisplayUnits(0.9f),
-                ConvertUnits.ToDisplayUnits(0.9f)
+                    Y = ConvertUnits.ToDisplayUnits(_head.Position.Y),
+                    Width = _headImg.Width,
+                    Height = _headImg.Height
+                }
             );
 
             //Torso
-            _torso = BodyFactory.CreateRectangle(_world, 2f, 4f, 10f);
+            _torso = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_torsoImg.Width), ConvertUnits.ToSimUnits(_torsoImg.Height), 10f);
             _torso.Mass = 5f;
-            _torso.Position = position + new Vector2(0f, 3f);
+            _torso.Position = position + new Vector2(0.1f, 2.5f);
 
             _torsoGeo = new RectangleGeometry(
                 new Rect
                 {
                     X = ConvertUnits.ToDisplayUnits(_torso.Position.X),
                     Y = ConvertUnits.ToDisplayUnits(_torso.Position.Y),
-                    Width = ConvertUnits.ToDisplayUnits(2f),
-                    Height = ConvertUnits.ToDisplayUnits(4f)
+                    Width = _torsoImg.Width,
+                    Height = _torsoImg.Height
                 }
             );
 
             //Left Arm
-            _lowerLeftArm = BodyFactory.CreateRectangle(_world, 0.45f, 1f, ArmDensity);
-            _lowerLeftArm.BodyType = BodyType.Dynamic;
-            _lowerLeftArm.AngularDamping = LimbAngularDamping;
-            _lowerLeftArm.Mass = 2f;
-            _lowerLeftArm.Rotation = 1.4f;
-            _lowerLeftArm.Position = position + new Vector2(-4f, 2.2f);
-
-            _lowerLeftArmGeo = new RectangleGeometry(
-                new Rect
-                {
-                    X = ConvertUnits.ToDisplayUnits(_lowerLeftArm.Position.X),
-                    Y = ConvertUnits.ToDisplayUnits(_lowerLeftArm.Position.Y),
-                    Width = ConvertUnits.ToDisplayUnits(0.45f),
-                    Height = ConvertUnits.ToDisplayUnits(1f)
-                }
-            );
-
-            _upperLeftArm = BodyFactory.CreateRectangle(_world, 0.45f, 1f, ArmDensity);
+            _upperLeftArm = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_upperLeftArmImg.Width), ConvertUnits.ToSimUnits(_upperLeftArmImg.Height), ArmDensity);
             _upperLeftArm.BodyType = BodyType.Dynamic;
             _upperLeftArm.AngularDamping = LimbAngularDamping;
             _upperLeftArm.Mass = 2f;
             _upperLeftArm.Rotation = 1.4f;
-            _upperLeftArm.Position = position + new Vector2(-2f, 1.8f);
+            _upperLeftArm.Position = position + new Vector2(0f, 2.5f);
 
             _upperLeftArmGeo = new RectangleGeometry(
                 new Rect
                 {
                     X = ConvertUnits.ToDisplayUnits(_upperLeftArm.Position.X),
                     Y = ConvertUnits.ToDisplayUnits(_upperLeftArm.Position.Y),
-                    Width = ConvertUnits.ToDisplayUnits(0.45f),
-                    Height = ConvertUnits.ToDisplayUnits(1f)
+                    Width = _upperLeftArmImg.Width,
+                    Height = _upperLeftArmImg.Height
+                }
+            );
+
+            _lowerLeftArm = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_lowerLeftArmImg.Width), ConvertUnits.ToSimUnits(_lowerLeftArmImg.Height), ArmDensity);
+            _lowerLeftArm.BodyType = BodyType.Dynamic;
+            _lowerLeftArm.AngularDamping = LimbAngularDamping;
+            _lowerLeftArm.Mass = 2f;
+            _lowerLeftArm.Rotation = 1.4f;
+            _lowerLeftArm.Position = position + new Vector2(-1.2f, 2.7f);
+
+            _lowerLeftArmGeo = new RectangleGeometry(
+                new Rect
+                {
+                    X = ConvertUnits.ToDisplayUnits(_lowerLeftArm.Position.X),
+                    Y = ConvertUnits.ToDisplayUnits(_lowerLeftArm.Position.Y),
+                    Width = _lowerLeftArmImg.Width,
+                    Height = _lowerLeftArmImg.Height
                 }
             );
 
             //Right Arm
-            _lowerRightArm = BodyFactory.CreateRectangle(_world, 0.45f, 1f, ArmDensity);
-            _lowerRightArm.BodyType = BodyType.Dynamic;
-            _lowerRightArm.AngularDamping = LimbAngularDamping;
-            _lowerRightArm.Mass = 2f;
-            _lowerRightArm.Rotation = -1.4f;
-            _lowerRightArm.Position = position + new Vector2(4f, 2.2f);
-
-            _lowerRightArmGeo = new RectangleGeometry(
-                new Rect
-                {
-                    X = ConvertUnits.ToDisplayUnits(_lowerRightArm.Position.X),
-                    Y = ConvertUnits.ToDisplayUnits(_lowerRightArm.Position.Y),
-                    Width = ConvertUnits.ToDisplayUnits(0.45f),
-                    Height = ConvertUnits.ToDisplayUnits(1f)
-                }
-            );
-
-            _upperRightArm = BodyFactory.CreateRectangle(_world, 0.45f, 1f, ArmDensity);
+            _upperRightArm = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_upperRightArmImg.Width), ConvertUnits.ToSimUnits(_upperRightArmImg.Height), ArmDensity);
             _upperRightArm.BodyType = BodyType.Dynamic;
             _upperRightArm.AngularDamping = LimbAngularDamping;
             _upperRightArm.Mass = 2f;
             _upperRightArm.Rotation = -1.4f;
-            _upperRightArm.Position = position + new Vector2(2f, 1.8f);
+            _upperRightArm.Position = position + new Vector2(1.6f, 3.0f);
 
             _upperRightArmGeo = new RectangleGeometry(
                 new Rect
                 {
                     X = ConvertUnits.ToDisplayUnits(_upperRightArm.Position.X),
                     Y = ConvertUnits.ToDisplayUnits(_upperRightArm.Position.Y),
-                    Width = ConvertUnits.ToDisplayUnits(0.45f),
-                    Height = ConvertUnits.ToDisplayUnits(1f)
+                    Width = _upperRightArmImg.Width,
+                    Height = _upperRightArmImg.Height
+                }
+            );
+
+            _lowerRightArm = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_lowerRightArmImg.Width), ConvertUnits.ToSimUnits(_lowerRightArmImg.Height), ArmDensity);
+            _lowerRightArm.BodyType = BodyType.Dynamic;
+            _lowerRightArm.AngularDamping = LimbAngularDamping;
+            _lowerRightArm.Mass = 2f;
+            _lowerRightArm.Rotation = -1.4f;
+            _lowerRightArm.Position = position + new Vector2(2.8f, 3.2f);
+
+            _lowerRightArmGeo = new RectangleGeometry(
+                new Rect
+                {
+                    X = ConvertUnits.ToDisplayUnits(_lowerRightArm.Position.X),
+                    Y = ConvertUnits.ToDisplayUnits(_lowerRightArm.Position.Y),
+                    Width = _lowerRightArmImg.Width,
+                    Height = _lowerRightArmImg.Height
                 }
             );
 
             //Left Leg
-            _lowerLeftLeg = BodyFactory.CreateRectangle(_world, 0.5f, 1f, LegDensity);
-            _lowerLeftLeg.BodyType = BodyType.Dynamic;
-            _lowerLeftLeg.AngularDamping = LimbAngularDamping;
-            _lowerLeftLeg.Mass = 2f;
-            _lowerLeftLeg.Position = position + new Vector2(-0.6f, 8f);
-
-            _lowerLeftLegGeo = new RectangleGeometry(
-                new Rect
-                {
-                    X = ConvertUnits.ToDisplayUnits(_lowerLeftLeg.Position.X),
-                    Y = ConvertUnits.ToDisplayUnits(_lowerLeftLeg.Position.Y),
-                    Width = ConvertUnits.ToDisplayUnits(0.5f),
-                    Height = ConvertUnits.ToDisplayUnits(1f)
-                }
-            );
-
-            _upperLeftLeg = BodyFactory.CreateRectangle(_world, 0.5f, 1f, LegDensity);
+            _upperLeftLeg = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_upperLeftLegImg.Width), ConvertUnits.ToSimUnits(_upperLeftLegImg.Height), LegDensity);
             _upperLeftLeg.BodyType = BodyType.Dynamic;
             _upperLeftLeg.AngularDamping = LimbAngularDamping;
             _upperLeftLeg.Mass = 2f;
-            _upperLeftLeg.Position = position + new Vector2(-0.6f, 6f);
+            _upperLeftLeg.Position = position + new Vector2(0.1f, 5f);
 
             _upperLeftLegGeo = new RectangleGeometry(
                 new Rect
                 {
                     X = ConvertUnits.ToDisplayUnits(_upperLeftLeg.Position.X),
                     Y = ConvertUnits.ToDisplayUnits(_upperLeftLeg.Position.Y),
-                    Width = ConvertUnits.ToDisplayUnits(0.5f),
-                    Height = ConvertUnits.ToDisplayUnits(1f)
+                    Width = _upperLeftLegImg.Width,
+                    Height = _upperLeftLegImg.Height
+                }
+            );
+
+            _lowerLeftLeg = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_lowerLeftLegImg.Width), ConvertUnits.ToSimUnits(_lowerLeftLegImg.Height), LegDensity);
+            _lowerLeftLeg.BodyType = BodyType.Dynamic;
+            _lowerLeftLeg.AngularDamping = LimbAngularDamping;
+            _lowerLeftLeg.Mass = 2f;
+            _lowerLeftLeg.Position = position + new Vector2(0.15f, 6.2f);
+
+            _lowerLeftLegGeo = new RectangleGeometry(
+                new Rect
+                {
+                    X = ConvertUnits.ToDisplayUnits(_lowerLeftLeg.Position.X),
+                    Y = ConvertUnits.ToDisplayUnits(_lowerLeftLeg.Position.Y),
+                    Width = _lowerLeftLegImg.Width,
+                    Height = _lowerLeftLegImg.Height
                 }
             );
 
             //Right Leg
-            _lowerRightLeg = BodyFactory.CreateRectangle(_world, 0.5f, 1f, LegDensity);
-            _lowerRightLeg.BodyType = BodyType.Dynamic;
-            _lowerRightLeg.AngularDamping = LimbAngularDamping;
-            _lowerRightLeg.Mass = 2f;
-            _lowerRightLeg.Position = position + new Vector2(0.6f, 8f);
-
-            _lowerRightLegGeo = new RectangleGeometry(
-                new Rect
-                {
-                    X = ConvertUnits.ToDisplayUnits(_lowerRightLeg.Position.X),
-                    Y = ConvertUnits.ToDisplayUnits(_lowerRightLeg.Position.Y),
-                    Width = ConvertUnits.ToDisplayUnits(0.5f),
-                    Height = ConvertUnits.ToDisplayUnits(1f)
-                }
-            );
-
-            _upperRightLeg = BodyFactory.CreateRectangle(_world, 0.5f, 1f, LegDensity);
+            _upperRightLeg = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_upperRightLegImg.Width), ConvertUnits.ToSimUnits(_upperRightLegImg.Height), LegDensity);
             _upperRightLeg.BodyType = BodyType.Dynamic;
             _upperRightLeg.AngularDamping = LimbAngularDamping;
             _upperRightLeg.Mass = 2f;
-            _upperRightLeg.Position = position + new Vector2(0.6f, 6f);
+            _upperRightLeg.Position = position + new Vector2(1.2f, 5f);
 
             _upperRightLegGeo = new RectangleGeometry(
                 new Rect
                 {
                     X = ConvertUnits.ToDisplayUnits(_upperRightLeg.Position.X),
                     Y = ConvertUnits.ToDisplayUnits(_upperRightLeg.Position.Y),
-                    Width = ConvertUnits.ToDisplayUnits(0.5f),
-                    Height = ConvertUnits.ToDisplayUnits(1f)
+                    Width = _upperRightLegImg.Width,
+                    Height = _upperRightLegImg.Height
+                }
+            );
+
+            _lowerRightLeg = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_lowerRightLegImg.Width), ConvertUnits.ToSimUnits(_lowerRightLegImg.Height), LegDensity);
+            _lowerRightLeg.BodyType = BodyType.Dynamic;
+            _lowerRightLeg.AngularDamping = LimbAngularDamping;
+            _lowerRightLeg.Mass = 2f;
+            _lowerRightLeg.Position = position + new Vector2(1.25f, 6.2f);
+
+            _lowerRightLegGeo = new RectangleGeometry(
+                new Rect
+                {
+                    X = ConvertUnits.ToDisplayUnits(_lowerRightLeg.Position.X),
+                    Y = ConvertUnits.ToDisplayUnits(_lowerRightLeg.Position.Y),
+                    Width = _lowerRightLegImg.Width,
+                    Height = _lowerRightLegImg.Height
                 }
             );
         }
@@ -270,95 +273,104 @@ namespace JumpFocus
         private void CreateJoints()
         {
             //head -> body
-            RevoluteJoint jHeadBody = new RevoluteJoint(_head, _torso,
-                                                        new Vector2(0f, 1f),
-                                                        new Vector2(0f, -2f));
-            jHeadBody.CollideConnected = false;
-            jHeadBody.MotorEnabled = false;
-            _world.AddJoint(jHeadBody);
+            _world.AddJoint(new DistanceJoint(_head, _torso, Vector2.Zero, Vector2.Zero));
+            _world.AddJoint(new DistanceJoint(_head, _torso, Vector2.Zero, new Vector2(1.5f, 0f)));
 
-            //lowerLeftArm -> upperLeftArm
-            _jLeftArm = new RevoluteJoint(_lowerLeftArm, _upperLeftArm,
-                                                       new Vector2(0f, -1f),
-                                                       new Vector2(0f, 1f));
-            _jLeftArm.CollideConnected = false;
-            _jLeftArm.MotorEnabled = true;
-            _world.AddJoint(_jLeftArm);
+            //RevoluteJoint jHeadBody = new RevoluteJoint(_head, _torso,
+            //                                            new Vector2(0f, 1f),
+            //                                            new Vector2(0f, -2f));
+            //jHeadBody.CollideConnected = false;
+            //jHeadBody.MotorEnabled = false;
+            //_world.AddJoint(jHeadBody);
 
             //upperLeftArm -> body
             _jLeftArmBody = new RevoluteJoint(_upperLeftArm, _torso,
-                                                           new Vector2(0f, -1f),
-                                                           new Vector2(-1f, -1.5f));
+                                                           new Vector2(-0.1f, 0f),
+                                                           new Vector2(-0.5f, 0.3f));
             _jLeftArmBody.CollideConnected = false;
             _jLeftArmBody.MotorEnabled = true;
             _world.AddJoint(_jLeftArmBody);
 
-            //lowerRightArm -> upperRightArm
-            _jRightArm = new RevoluteJoint(_lowerRightArm, _upperRightArm,
-                                                        new Vector2(0f, -1f),
-                                                        new Vector2(0f, 1f));
-            _jRightArm.CollideConnected = false;
-            _jRightArm.MotorEnabled = true;
-            _world.AddJoint(_jRightArm);
+            //lowerLeftArm -> upperLeftArm
+            _jLeftArm = new RevoluteJoint(_lowerLeftArm, _upperLeftArm,
+                                                       new Vector2(0.25f, 0f),
+                                                       new Vector2(0.25f, 1.3f));
+            _jLeftArm.CollideConnected = false;
+            _jLeftArm.MotorEnabled = true;
+            _world.AddJoint(_jLeftArm);
 
             //upperRightArm -> body
             _jRightArmBody = new RevoluteJoint(_upperRightArm, _torso,
-                                                            new Vector2(0f, -1f),
-                                                            new Vector2(1f, -1.5f));
+                                                            new Vector2(0.1f, 0f),
+                                                            new Vector2(1.6f, 0.3f));
             _jRightArmBody.CollideConnected = false;
             _jRightArmBody.MotorEnabled = true;
             _world.AddJoint(_jRightArmBody);
 
-            //lowerLeftLeg -> upperLeftLeg
-            _jLeftLeg = new RevoluteJoint(_lowerLeftLeg, _upperLeftLeg,
-                                                       new Vector2(0f, -1.1f),
-                                                       new Vector2(0f, 1f));
-            _jLeftLeg.CollideConnected = false;
-            _jLeftLeg.MotorEnabled = true;
-            _world.AddJoint(_jLeftLeg);
+            //lowerRightArm -> upperRightArm
+            _jRightArm = new RevoluteJoint(_lowerRightArm, _upperRightArm,
+                                                        new Vector2(0.25f, 0f),
+                                                        new Vector2(0.25f, 1.3f));
+            _jRightArm.CollideConnected = false;
+            _jRightArm.MotorEnabled = true;
+            _world.AddJoint(_jRightArm);
 
             //upperLeftLeg -> body
             _jLeftLegBody = new RevoluteJoint(_upperLeftLeg, _torso,
                                                            new Vector2(0f, -1.1f),
-                                                           new Vector2(-0.8f, 1.9f));
+                                                           new Vector2(0.1f, 1.5f));
             _jLeftLegBody.CollideConnected = false;
             _jLeftLegBody.MotorEnabled = true;
             _world.AddJoint(_jLeftLegBody);
 
-            //lowerRightleg -> upperRightleg
-            _jRightLeg = new RevoluteJoint(_lowerRightLeg, _upperRightLeg,
-                                                        new Vector2(0f, -1.1f),
-                                                        new Vector2(0f, 1f));
-            _jRightLeg.CollideConnected = false;
-            _jRightLeg.MotorEnabled = true;
-            _world.AddJoint(_jRightLeg);
+            //lowerLeftLeg -> upperLeftLeg
+            _jLeftLeg = new RevoluteJoint(_lowerLeftLeg, _upperLeftLeg,
+                                                       new Vector2(0f, 0f),
+                                                       new Vector2(0f, 1.2f));
+            _jLeftLeg.CollideConnected = false;
+            _jLeftLeg.MotorEnabled = true;
+            _world.AddJoint(_jLeftLeg);
 
             //upperRightleg -> body
             _jRightLegBody = new RevoluteJoint(_upperRightLeg, _torso,
-                                                            new Vector2(0f, -1.1f),
-                                                            new Vector2(0.8f, 1.9f));
+                                                            new Vector2(0f, 0f),
+                                                            new Vector2(1.2f, 2.5f));
             _jRightLegBody.CollideConnected = false;
             _jRightLegBody.MotorEnabled = true;
             _world.AddJoint(_jRightLegBody);
+
+            //lowerRightleg -> upperRightleg
+            _jRightLeg = new RevoluteJoint(_lowerRightLeg, _upperRightLeg,
+                                                        new Vector2(0f, 0f),
+                                                        new Vector2(0f, 1.2f));
+            _jRightLeg.CollideConnected = false;
+            _jRightLeg.MotorEnabled = true;
+            _world.AddJoint(_jRightLeg);
         }
 
         public void Draw(DrawingContext dc)
         {
-            var red = Color.FromArgb(255, 255, 0, 0);
-            var brush = new SolidColorBrush(red);
-
             if (double.IsNaN(_head.Position.X) || double.IsNaN(_head.Position.Y))
             {
                 return;
             }
 
-            _headGeo.Center = new Point
+            _headGeo.Rect = new Rect
             {
                 X = ConvertUnits.ToDisplayUnits(_head.Position.X),
-                Y = ConvertUnits.ToDisplayUnits(_head.Position.Y)
+                Y = ConvertUnits.ToDisplayUnits(_head.Position.Y),
+                Width = _headGeo.Rect.Width,
+                Height = _headGeo.Rect.Height
             };
+            _headGeo.Transform = new RotateTransform(
+                MathHelper.ToDegrees(_head.Rotation),
+                ConvertUnits.ToDisplayUnits(_head.Position.X),
+                ConvertUnits.ToDisplayUnits(_head.Position.Y));
 
-            dc.DrawImage(_headImg, new Rect(_headGeo.Center, new Size(_headImg.Width, _headImg.Height)));
+            var transform = (RotateTransform)_headGeo.Transform;
+            dc.PushTransform(transform);
+            dc.DrawImage(_headImg, _headGeo.Rect);
+            dc.Pop();
 
             _torsoGeo.Rect = new Rect
             {
@@ -373,7 +385,7 @@ namespace JumpFocus
                 ConvertUnits.ToDisplayUnits(_torso.Position.X),
                 ConvertUnits.ToDisplayUnits(_torso.Position.Y));
 
-            var transform = (RotateTransform)_torsoGeo.Transform;
+            transform = (RotateTransform)_torsoGeo.Transform;
             dc.PushTransform(transform);
             dc.DrawImage(_torsoImg, _torsoGeo.Rect);
             dc.Pop();
@@ -500,7 +512,7 @@ namespace JumpFocus
             StepSeconds = StepSeconds / speedFactor;
 
             //Torso
-            if (Joints[MK.JointType.ShoulderLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderRight].TrackingState == MK.TrackingState.Tracked)
+            if (Joints[MK.JointType.ShoulderLeft].TrackingState != MK.TrackingState.NotTracked && Joints[MK.JointType.ShoulderRight].TrackingState != MK.TrackingState.NotTracked)
             {
                 var start = Joints[MK.JointType.ShoulderLeft].Position;
                 var end = Joints[MK.JointType.ShoulderRight].Position;
@@ -511,7 +523,7 @@ namespace JumpFocus
             }
 
             //Right Arm
-            if (Joints[MK.JointType.ElbowRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderRight].TrackingState == MK.TrackingState.Tracked)
+            if (Joints[MK.JointType.ElbowRight].TrackingState != MK.TrackingState.NotTracked && Joints[MK.JointType.ShoulderRight].TrackingState != MK.TrackingState.NotTracked)
             {
                 var start = Joints[MK.JointType.ShoulderRight].Position;
                 var end = Joints[MK.JointType.ElbowRight].Position;
@@ -521,7 +533,7 @@ namespace JumpFocus
                 _jRightArmBody.MotorSpeed = (expectedRadian - _jRightArmBody.JointAngle) / StepSeconds;
                 _jRightArmBody.MaxMotorTorque = maxTorque;
             }
-            if (Joints[MK.JointType.WristRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ElbowRight].TrackingState == MK.TrackingState.Tracked)
+            if (Joints[MK.JointType.WristRight].TrackingState != MK.TrackingState.NotTracked && Joints[MK.JointType.ElbowRight].TrackingState != MK.TrackingState.NotTracked)
             {
                 var start = Joints[MK.JointType.ElbowRight].Position;
                 var end = Joints[MK.JointType.WristRight].Position;
@@ -533,7 +545,7 @@ namespace JumpFocus
             }
 
             //Left Arm
-            if (Joints[MK.JointType.ElbowLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ShoulderLeft].TrackingState == MK.TrackingState.Tracked)
+            if (Joints[MK.JointType.ElbowLeft].TrackingState != MK.TrackingState.NotTracked && Joints[MK.JointType.ShoulderLeft].TrackingState != MK.TrackingState.NotTracked)
             {
                 var start = Joints[MK.JointType.ElbowLeft].Position;
                 var end = Joints[MK.JointType.ShoulderLeft].Position;
@@ -543,7 +555,7 @@ namespace JumpFocus
                 _jLeftArmBody.MotorSpeed = (expectedRadian - _jLeftArmBody.JointAngle) / StepSeconds;
                 _jLeftArmBody.MaxMotorTorque = maxTorque;
             }
-            if (Joints[MK.JointType.WristLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.ElbowLeft].TrackingState == MK.TrackingState.Tracked)
+            if (Joints[MK.JointType.WristLeft].TrackingState != MK.TrackingState.NotTracked && Joints[MK.JointType.ElbowLeft].TrackingState != MK.TrackingState.NotTracked)
             {
                 var start = Joints[MK.JointType.WristLeft].Position;
                 var end = Joints[MK.JointType.ElbowLeft].Position;
@@ -555,7 +567,7 @@ namespace JumpFocus
             }
 
             //Right Leg
-            if (Joints[MK.JointType.KneeRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.HipRight].TrackingState == MK.TrackingState.Tracked)
+            if (Joints[MK.JointType.KneeRight].TrackingState != MK.TrackingState.NotTracked && Joints[MK.JointType.HipRight].TrackingState != MK.TrackingState.NotTracked)
             {
                 var start = Joints[MK.JointType.KneeRight].Position;
                 var end = Joints[MK.JointType.HipRight].Position;
@@ -565,7 +577,7 @@ namespace JumpFocus
                 _jRightLegBody.MotorSpeed = expectedRadian - _jRightLegBody.JointAngle;
                 _jRightLegBody.MaxMotorTorque = maxTorque;
             }
-            if (Joints[MK.JointType.AnkleRight].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.KneeRight].TrackingState == MK.TrackingState.Tracked)
+            if (Joints[MK.JointType.AnkleRight].TrackingState != MK.TrackingState.NotTracked && Joints[MK.JointType.KneeRight].TrackingState != MK.TrackingState.NotTracked)
             {
                 var start = Joints[MK.JointType.AnkleRight].Position;
                 var end = Joints[MK.JointType.KneeRight].Position;
@@ -577,7 +589,7 @@ namespace JumpFocus
             }
 
             //Left Leg
-            if (Joints[MK.JointType.KneeLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.HipLeft].TrackingState == MK.TrackingState.Tracked)
+            if (Joints[MK.JointType.KneeLeft].TrackingState != MK.TrackingState.NotTracked && Joints[MK.JointType.HipLeft].TrackingState != MK.TrackingState.NotTracked)
             {
                 var start = Joints[MK.JointType.KneeLeft].Position;
                 var end = Joints[MK.JointType.HipLeft].Position;
@@ -587,7 +599,7 @@ namespace JumpFocus
                 _jLeftLegBody.MotorSpeed = expectedRadian - _jLeftLegBody.JointAngle;
                 _jLeftLegBody.MaxMotorTorque = maxTorque;
             }
-            if (Joints[MK.JointType.AnkleLeft].TrackingState == MK.TrackingState.Tracked && Joints[MK.JointType.KneeLeft].TrackingState == MK.TrackingState.Tracked)
+            if (Joints[MK.JointType.AnkleLeft].TrackingState != MK.TrackingState.NotTracked && Joints[MK.JointType.KneeLeft].TrackingState != MK.TrackingState.NotTracked)
             {
                 var start = Joints[MK.JointType.AnkleLeft].Position;
                 var end = Joints[MK.JointType.KneeLeft].Position;
@@ -599,7 +611,7 @@ namespace JumpFocus
             }
         }
 
-        public void Jump(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
+        public bool Jump(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
         {
             if (IsReadyToJump && Joints[MK.JointType.HandRight].TrackingState == MK.TrackingState.Tracked)
             {
@@ -630,6 +642,7 @@ namespace JumpFocus
                                 if (VerticalSpeed > currentSpeed + 1)
                                 {
                                     HasJumped = true;
+                                    return true;
                                 }
                             }
                         }
@@ -637,6 +650,8 @@ namespace JumpFocus
                     _previousPosition = currentPosition;
                 }
             }
+
+            return false;
         }
     }
 }

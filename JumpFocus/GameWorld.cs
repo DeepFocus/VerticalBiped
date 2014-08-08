@@ -24,7 +24,8 @@ namespace JumpFocus
         private World _world;
 
         private float _worldWidth = 150f, _worldHeight = 150f;
-        private float _cameraWidth = 50f, _cameraHeight = 50f;
+        //private float _cameraWidth = 150f, _cameraHeight = 150f;
+        private float _cameraWidth = 30f, _cameraHeight = 30f;
 
         private Rect _camera;
         private Body _anchor;
@@ -45,7 +46,7 @@ namespace JumpFocus
         private BitmapImage _catImg;
         private TransformedBitmap _catReversedImg;
 
-        private int _score = 0;
+        public int Coins { get; private set; }
 
         public float WorldWdth { get { return _worldWidth; } }
         public float WorldHeight { get { return _worldHeight; } }
@@ -181,7 +182,7 @@ namespace JumpFocus
             }
 
             //Score display
-            var score = string.Format("Score: {0}", _score);
+            var score = string.Format("Score: {0}", Coins);
             var fText = new FormattedText(score, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _textBrush);
             dc.DrawText(fText, _camera.Location);
 
@@ -192,7 +193,7 @@ namespace JumpFocus
             {
                 Altitude = (int)alt;
             }
-            var altitude = string.Format("Altitude: {0}", alt);
+            var altitude = string.Format("Max Altitude: {0}", Altitude);
             fText = new FormattedText(altitude, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _textBrush);
             dc.DrawText(fText, Point.Add(_camera.Location, new Vector(0, 150)));
 
@@ -280,7 +281,7 @@ namespace JumpFocus
         bool coin_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
             var coin = (Coin)fixtureA.Body.UserData;
-            _score += coin.Value;
+            Coins += coin.Value;
 
             coin.Value = 0;
             fixtureA.Body.UserData = coin;
@@ -313,9 +314,9 @@ namespace JumpFocus
         {
             if (fixtureB.CollisionCategories == Category.Cat1)
             {
-                HasLanded = true;
                 //end of game
-                Message = string.Format("Your score is {0}", _score + Altitude);
+                HasLanded = true;
+                Message = string.Format("Your score is {0}", Coins + Altitude);
             }
 
             return true;

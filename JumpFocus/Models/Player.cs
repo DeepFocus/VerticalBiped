@@ -11,6 +11,7 @@ namespace JumpFocus.Models
         public int Id { get; set; }
         public string Name { get; set; }
         public int Dogecoins { get; set; }
+        public string Mugshot { get; set; }
 
         //Bonus
         public int Ped { get; set; }
