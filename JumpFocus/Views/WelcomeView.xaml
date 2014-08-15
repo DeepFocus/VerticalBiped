@@ -1,10 +1,10 @@
 ﻿<UserControl x:Class="JumpFocus.Views.WelcomeView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Background="Azure" Height="221" Width="299">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="Azure"  Height="900" Width="1200">
     <Grid>
-        <DockPanel Height="218" LastChildFill="False" Width="297">
-            <Button Content="START LEAPING" x:Name="ShowJump"/>
-        </DockPanel>
+        <Grid.Background>
+            <ImageBrush ImageSource="/JumpFocus;component/Resources/Images/intro.png"/>
+        </Grid.Background>
+        <Label Content="{Binding Path=Twitter}"/>
     </Grid>
 </UserControl>

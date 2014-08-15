@@ -62,10 +62,19 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Lib\Microsoft.Kinect.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Speech, Version=11.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Microsoft.Speech.dll</HintPath>
+    </Reference>
+    <Reference Include="RestSharp">
+      <HintPath>..\packages\RestSharp.104.4.0\lib\net4\RestSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Caliburn.Micro.1.5.2\lib\net45\System.Windows.Interactivity.dll</HintPath>
     </Reference>
@@ -94,9 +103,16 @@
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="Coin.cs" />
     <Compile Include="DAL\JumpFocusContext.cs" />
+    <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="GameWorld.cs" />
+    <Compile Include="KinectAudioStream.cs" />
+    <Compile Include="Models\API\TwitterFollowers.cs" />
+    <Compile Include="Models\API\TwitterFollowersIds.cs" />
+    <Compile Include="Models\API\TwitterUser.cs" />
     <Compile Include="Models\History.cs" />
     <Compile Include="Models\Player.cs" />
+    <Compile Include="Models\API\TwitterAuthenticationResponse.cs" />
+    <Compile Include="Repositories\TwitterRepository.cs" />
     <Compile Include="ViewModels\JumpViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\WelcomeViewModel.cs" />
@@ -145,6 +161,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Lib\Microsoft.Kinect.dll" />
+    <Content Include="Lib\Microsoft.Speech.dll" />
+    <Resource Include="Resources\Images\intro.png" />
     <Resource Include="Resources\Images\cat.png" />
     <Resource Include="Resources\Images\Avatar\Head.png" />
     <Resource Include="Resources\Images\Avatar\LowerLeftArm.png" />

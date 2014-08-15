@@ -10,8 +10,12 @@ namespace JumpFocus.Models
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public long TwitterId { get; set; }
+        public string TwitterHandle { get; set; }
+        public string TwitterPhoto { get; set; }
         public int Dogecoins { get; set; }
         public string Mugshot { get; set; }
+        public DateTime Created { get; set; }
 
         //Bonus
         public int Ped { get; set; }

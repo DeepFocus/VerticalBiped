@@ -613,7 +613,7 @@ namespace JumpFocus
 
         public bool Jump(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
         {
-            if (IsReadyToJump && Joints[MK.JointType.HandRight].TrackingState == MK.TrackingState.Tracked)
+            if (IsReadyToJump && Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
             {
                 float speedFactor = 2f;
                 StepSeconds = StepSeconds / speedFactor;
@@ -621,7 +621,7 @@ namespace JumpFocus
                 //Jump
                 if (Joints[MK.JointType.HandRight].TrackingState == MK.TrackingState.Tracked)
                 {
-                    var currentPosition = Joints[MK.JointType.HandRight].Position;
+                    var currentPosition = Joints[MK.JointType.SpineMid].Position;
                     if (_previousPosition != default(MK.CameraSpacePoint))
                     {
                         if (HasJumped)
