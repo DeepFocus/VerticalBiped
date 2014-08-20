@@ -90,7 +90,7 @@ namespace JumpFocus.Repositories
             client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(base64Token, "Basic");
 
             var request = new RestRequest("/oauth2/token", Method.POST);
-            request.Method = Method.GET;
+            request.Method = Method.POST;
             request.AddParameter("grant_type", "client_credentials");
 
             var response = await client.ExecuteTaskAsync<TwitterAuthenticationResponse>(request);

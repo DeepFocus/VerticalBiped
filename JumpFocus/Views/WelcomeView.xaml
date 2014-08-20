@@ -5,6 +5,9 @@
         <Grid.Background>
             <ImageBrush ImageSource="/JumpFocus;component/Resources/Images/intro.png"/>
         </Grid.Background>
-        <Label Content="{Binding Path=Twitter}"/>
+        <Label Content="{Binding TwitterHandle}" Margin="388,76,304,746" FontSize="48" FontFamily="Lucida Console" />
+        <Image Source="{Binding TwitterPhoto}" HorizontalAlignment="Left" Height="156" Margin="230,76,0,0" VerticalAlignment="Top" Width="156"/>
+        <Label Content="{Binding PlayerName}" Margin="386,154,306,668" FontSize="36" FontFamily="Lucida Console" />
+        <Label Content="{Binding Guide}" Margin="388,0,304,822" FontSize="36" FontFamily="Lucida Console" />
     </Grid>
 </UserControl>

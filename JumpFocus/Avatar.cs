@@ -76,7 +76,6 @@ namespace JumpFocus
         public bool IsReadyToJump { get; set; }
         public float VerticalSpeed { get; private set; }
         public byte BodyIndex { get; set; }
-        public Player player { get; set; }
 
         public Avatar(World world, Vector2 position)
         {

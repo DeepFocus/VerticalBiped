@@ -75,6 +75,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Caliburn.Micro.1.5.2\lib\net45\System.Windows.Interactivity.dll</HintPath>
     </Reference>
@@ -106,12 +107,22 @@
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="GameWorld.cs" />
     <Compile Include="KinectAudioStream.cs" />
+    <Compile Include="Migrations\201408181933348_InitialCreate.cs" />
+    <Compile Include="Migrations\201408181933348_InitialCreate.Designer.cs">
+      <DependentUpon>201408181933348_InitialCreate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201408191908582_Move Mugshot.cs" />
+    <Compile Include="Migrations\201408191908582_Move Mugshot.Designer.cs">
+      <DependentUpon>201408191908582_Move Mugshot.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\API\TwitterFollowers.cs" />
     <Compile Include="Models\API\TwitterFollowersIds.cs" />
     <Compile Include="Models\API\TwitterUser.cs" />
     <Compile Include="Models\History.cs" />
     <Compile Include="Models\Player.cs" />
     <Compile Include="Models\API\TwitterAuthenticationResponse.cs" />
+    <Compile Include="Proxies\PlayerProxy.cs" />
     <Compile Include="Repositories\TwitterRepository.cs" />
     <Compile Include="ViewModels\JumpViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
@@ -131,6 +142,12 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <EmbeddedResource Include="Migrations\201408181933348_InitialCreate.resx">
+      <DependentUpon>201408181933348_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201408191908582_Move Mugshot.resx">
+      <DependentUpon>201408191908582_Move Mugshot.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

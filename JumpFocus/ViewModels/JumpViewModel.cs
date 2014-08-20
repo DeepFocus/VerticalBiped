@@ -1,4 +1,5 @@
-﻿using Caliburn.Micro;
+﻿using System.Data.Entity.Migrations;
+using Caliburn.Micro;
 using JumpFocus.DAL;
 using JumpFocus.Models;
 using Microsoft.Kinect;
@@ -23,6 +24,7 @@ namespace JumpFocus.ViewModels
     {
         private Stopwatch _stopwatch;
 
+        private readonly IConductor _conductor;
         private KinectSensor _sensor;
         private MultiSourceFrameReader _reader;
         private Body[] _bodies;
@@ -58,9 +60,11 @@ namespace JumpFocus.ViewModels
             }
         }
 
-        public JumpViewModel(KinectSensor kinectSensor)
+        public JumpViewModel(IConductor conductor, KinectSensor kinectSensor, Player player)
         {
+            _conductor = conductor;
             _sensor = kinectSensor;
+            _player = player;
         }
 
         protected override void OnActivate()
@@ -181,19 +185,38 @@ namespace JumpFocus.ViewModels
 
                                 if (_avatar.IsReadyToJump && !_avatar.HasJumped)
                                 {
-                                    if (_avatar.Jump(body.Joints, stepSeconds))
-                                    {
-                                        //mugshot
-                                        var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body);
-                                        var filePath = SaveHeadshot(headBitmap);
-
-                                        _avatar.player.Mugshot = filePath;
-                                    }
+                                    _avatar.Jump(body.Joints, stepSeconds);
                                 }
 
                                 if (_avatar.HasJumped && !string.IsNullOrWhiteSpace(_gameWorld.Message) && !_gameWorld.HasLanded)
                                 {
                                     _gameWorld.Message = string.Empty;
+                                }
+                                
+                                if (_gameWorld.HasLanded)
+                                {
+                                    //mugshot
+                                    var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body);
+                                    var filePath = SaveHeadshot(headBitmap);
+
+                                    var history = new History
+                                    {
+                                        Altitude = _gameWorld.Altitude,
+                                        Dogecoins = _gameWorld.Coins,
+                                        Played = DateTime.Now,
+                                        Player = _player,
+                                        Mugshot = filePath
+                                    };
+
+                                    _player.Dogecoins += _gameWorld.Coins;
+
+                                    var db = new JumpFocusContext();
+                                    db.Histories.Add(history);
+                                    db.Players.AddOrUpdate(_player);
+                                    db.SaveChanges();
+
+                                    System.Threading.Thread.Sleep(10000);
+                                    _conductor.ActivateItem(new WelcomeViewModel(_conductor, _sensor));
                                 }
                             }
                             else
@@ -205,7 +228,6 @@ namespace JumpFocus.ViewModels
                                         _currentUserId = _bodies[index].TrackingId;
                                         _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 10f))
                                         {
-                                            player = new Player(),
                                             BodyIndex = index
                                         };
                                         break;
@@ -217,16 +239,12 @@ namespace JumpFocus.ViewModels
                             {
                                 _avatar.Draw(dc);
                                 _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
-
-                                //if (_gameWorld.HasLanded)
-                                //{
-                                //    _avatar.player.Dogecoins = _gameWorld.Coins;
-                                //    _avatar.player.Name = _avatar.BodyIndex.ToString();
-
-                                //    var db = new JumpFocusContext();
-                                //    db.Players.Add(_avatar.player);
-                                //    db.SaveChanges();
-                                //}
+                                
+                                if (_gameWorld.HasLanded)
+                                {
+                                    System.Threading.Thread.Sleep(10000);
+                                    _conductor.ActivateItem(new WelcomeViewModel(_conductor, _sensor));
+                                }
                             }
                         }
                     }

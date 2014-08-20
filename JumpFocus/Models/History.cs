@@ -13,11 +13,6 @@ namespace JumpFocus.Models
         public DateTime Played { get; set; }
         public int Altitude { get; set; }
         public int Dogecoins { get; set; }
-        public string Picture { get; set; }
-
-        //Bonus
-        public int Ped { get; set; }
-        public int JetPack { get; set; }
-        public int Helmet { get; set; }
+        public string Mugshot { get; set; }
     }
 }

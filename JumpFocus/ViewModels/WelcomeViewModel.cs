@@ -1,100 +1,88 @@
 ﻿using System.Configuration;
-using System.Data.Entity.Migrations;
-using System.Windows.Documents;
+using System.IO;
+using System.Runtime.Caching;
+using System.Windows.Media.Imaging;
 using Caliburn.Micro;
+using JumpFocus.Models;
 using Microsoft.Kinect;
 using Microsoft.Speech.AudioFormat;
 using Microsoft.Speech.Recognition;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Media;
-using JumpFocus.Repositories;
-using JumpFocus.Models.API;
 using JumpFocus.DAL;
-using JumpFocus.Models;
+using JumpFocus.Proxies;
 
 namespace JumpFocus.ViewModels
 {
     class WelcomeViewModel : Screen
     {
+        private readonly ObjectCache _cache;
         private readonly string _twitterApiKey = ConfigurationManager.AppSettings["TwitterApiKey"];
         private readonly string _twitterApiSecret = ConfigurationManager.AppSettings["TwitterApiSecret"];
         private readonly string _twitterScreenName = ConfigurationManager.AppSettings["TwitterScreenName"];
 
-        private string _twitter;
-        public string Twitter
+        private Player _player;
+
+        private string _guide;
+        public string Guide
         {
-            get { return _twitter; }
+            get { return _guide; }
             private set
             {
-                _twitter = value;
-                NotifyOfPropertyChange(() => Twitter);
+                _guide = value;
+                NotifyOfPropertyChange(() => Guide);
+            }
+        }
+        private string _twitterHandle;
+        public string TwitterHandle
+        {
+            get { return _twitterHandle; }
+            private set
+            {
+                _twitterHandle = value;
+                NotifyOfPropertyChange(() => TwitterHandle);
+            }
+        }
+        private string _playerName;
+        public string PlayerName
+        {
+            get { return _playerName; }
+            private set
+            {
+                _playerName = value;
+                NotifyOfPropertyChange(() => PlayerName);
+            }
+        }
+        private BitmapImage _twitterPhoto;
+        public BitmapImage TwitterPhoto
+        {
+            get { return _twitterPhoto; }
+            private set
+            {
+                _twitterPhoto = value;
+                NotifyOfPropertyChange(() => TwitterPhoto);
             }
         }
 
+        private readonly IConductor _conductor;
         private readonly KinectSensor _sensor;
         private KinectAudioStream _convertStream;
         private SpeechRecognitionEngine _speechEngine;
 
-        public WelcomeViewModel(KinectSensor kinectSensor)
+        public WelcomeViewModel(IConductor conductor, KinectSensor kinectSensor)
         {
+            _conductor = conductor;
             _sensor = kinectSensor;
-            Twitter = "test";
+            _cache = new MemoryCache(GetType().FullName);
         }
 
         protected async override void OnActivate()
         {
-            Twitter = "Loading...";
-
-            var twitterRepo = new TwitterRepository(_twitterApiKey, _twitterApiSecret);
-
-            //initiallize the cursor to the default value
-            var ids = new List<long>();
-            var followersIds = new TwitterFollowersIds
-            {
-                next_cursor = -1
-            };
-            do
-            {
-                followersIds = await twitterRepo.GetFollowersIds(_twitterScreenName, followersIds.next_cursor);
-                if (null != followersIds)
-                {
-                    ids.AddRange(followersIds.ids);
-                }
-            } while (null != followersIds && followersIds.next_cursor > 0);
-
-            var dbRepo = new JumpFocusContext();
-            var dbUserTwitterIds = from p in dbRepo.Players
-                                   where p.Name != null && p.Name.Trim() != string.Empty
-                                   select p.TwitterId;
-            ids.RemoveAll(dbUserTwitterIds.Contains);
-
-            long[] users;
-            while ((users = ids.Take(100).ToArray()).Length > 0) //100 is the twitter API limit
-            {
-                var players = await twitterRepo.PostUsersLookup(users);
-                if (null != players)
-                {
-                    foreach (var player in players)
-                    {
-                        var p = new Player
-                        {
-                            TwitterId = player.id,
-                            Name = player.name,
-                            TwitterHandle = player.screen_name,
-                            TwitterPhoto = player.profile_image_url,
-                            Created = DateTime.Now
-                        };
-                        dbRepo.Players.AddOrUpdate(p);
-                    }
-                }
-                ids.RemoveAll(users.Contains);
-                dbRepo.SaveChanges();
-            }
+            Guide = "Loading...";
+            TwitterHandle = string.Empty;
+            PlayerName = string.Empty;
+            TwitterPhoto = null;
 
             if (null == _sensor)
             {
@@ -106,11 +94,27 @@ namespace JumpFocus.ViewModels
 
             // grab the audio stream
             IReadOnlyList<AudioBeam> audioBeamList = _sensor.AudioSource.AudioBeams;
-            System.IO.Stream audioStream = audioBeamList[0].OpenInputStream();
+            Stream audioStream = audioBeamList[0].OpenInputStream();
 
             // create the convert stream
             _convertStream = new KinectAudioStream(audioStream);
 
+            var proxy = new PlayerProxy(_cache, _twitterApiKey, _twitterApiSecret, _twitterScreenName);
+            var handles = new List<SemanticResultValue>();
+            foreach (var p in await proxy.GetAllPlayers())
+            {
+                handles.Add(new SemanticResultValue(p.Name, p.Id));
+                handles.Add(new SemanticResultValue(p.TwitterHandle, p.Id));
+            }
+
+            //Initialize the speech recognition engine
+            SpeechInitialization(handles, NameRecognized);
+            
+            Guide = "What's your name?";
+        }
+
+        private void SpeechInitialization(IEnumerable<SemanticResultValue> input, EventHandler<SpeechRecognizedEventArgs> success)
+        {
             RecognizerInfo ri = GetKinectRecognizer();
 
             if (null != ri)
@@ -118,10 +122,9 @@ namespace JumpFocus.ViewModels
                 _speechEngine = new SpeechRecognitionEngine(ri.Id);
 
                 var handles = new Choices();
-                foreach (var p in dbRepo.Players)
+                foreach (var i in input)
                 {
-                    handles.Add(new SemanticResultValue(p.Name, p.Id));
-                    handles.Add(new SemanticResultValue(p.TwitterHandle, p.Id));
+                    handles.Add(i);
                 }
 
                 var gb = new GrammarBuilder { Culture = ri.Culture };
@@ -130,8 +133,7 @@ namespace JumpFocus.ViewModels
                 var g = new Grammar(gb);
                 _speechEngine.LoadGrammar(g);
 
-                _speechEngine.SpeechRecognized += NameRecognized;
-                _speechEngine.SpeechRecognitionRejected += SpeechRejected;
+                _speechEngine.SpeechRecognized += success;
 
                 // let the convertStream know speech is going active
                 _convertStream.SpeechActive = true;
@@ -143,12 +145,6 @@ namespace JumpFocus.ViewModels
                 _speechEngine.SetInputToAudioStream(
                     _convertStream, new SpeechAudioFormatInfo(EncodingFormat.Pcm, 16000, 16, 1, 32000, 2, null));
                 _speechEngine.RecognizeAsync(RecognizeMode.Multiple);
-
-                Twitter = "Ready";
-            }
-            else
-            {
-                //error no speech recognizer
             }
         }
 
@@ -162,22 +158,50 @@ namespace JumpFocus.ViewModels
             // Speech utterance confidence below which we treat speech as if it hadn't been heard
             const double ConfidenceThreshold = 0.3;
 
-            //this.ClearRecognitionHighlights();
-
             if (e.Result.Confidence >= ConfidenceThreshold)
             {
-                Twitter = e.Result.Text;
+                if ((int) e.Result.Semantics.Value == 0)
+                {
+                    TwitterHandle = "Guest";
+                    PlayerName = "Guest";
+                }
+                else
+                {
+                    var dbRepo = new JumpFocusContext();
+                    _player = dbRepo.Players.Single(p => p.Id == (int) e.Result.Semantics.Value);
+
+                    TwitterHandle = '@' + _player.TwitterHandle;
+                    PlayerName = _player.Name;
+                    TwitterPhoto = new BitmapImage(new Uri(_player.TwitterPhoto));
+                }
+
+                var handles = new List<SemanticResultValue>()
+                {
+                    new SemanticResultValue("yes", true),
+                    new SemanticResultValue("no", false)
+                };
+
+                Guide = "Confirm with yes or no";
+                //Reinitialize the speech recognition engine for the yes/no
+                SpeechInitialization(handles, YesRecognized);
             }
         }
 
-        /// <summary>
-        /// Handler for rejected speech events.
-        /// </summary>
-        /// <param name="sender">object sending the event.</param>
-        /// <param name="e">event arguments.</param>
-        private void SpeechRejected(object sender, SpeechRecognitionRejectedEventArgs e)
+        private void YesRecognized(object sender, SpeechRecognizedEventArgs e)
         {
-            //propose to follow on twitter
+            const double ConfidenceThresold = 0.3;
+
+            if (e.Result.Confidence >= ConfidenceThresold)
+            {
+                if ((bool)e.Result.Semantics.Value)
+                {
+                    _conductor.ActivateItem(new JumpViewModel(_conductor, _sensor, _player));
+                }
+                else
+                {
+                    OnActivate();
+                }
+            }
         }
 
         /// <summary>
@@ -211,7 +235,6 @@ namespace JumpFocus.ViewModels
             if (null != _speechEngine)
             {
                 _speechEngine.SpeechRecognized -= NameRecognized;
-                _speechEngine.SpeechRecognitionRejected -= SpeechRejected;
                 _speechEngine.RecognizeAsyncStop();
             }
             if (null != _sensor)
