@@ -1,7 +1,8 @@
-﻿<UserControl x:Class="JumpFocus.Views.MainView"
+﻿<Window x:Class="JumpFocus.Views.MainView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <DockPanel>
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding DisplayName}" Icon="..\icon.ico" FontFamily="../Resources/Fonts/#Tattoo Ink" WindowState="Maximized" WindowStyle="None">
+    <Grid>
         <ContentControl x:Name="ActiveItem" />
-    </DockPanel>
-</UserControl>
+    </Grid>
+</Window>

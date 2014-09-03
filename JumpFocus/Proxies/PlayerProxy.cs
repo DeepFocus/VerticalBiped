@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Runtime.Caching;
@@ -28,31 +29,26 @@ namespace JumpFocus.Proxies
 
         public async Task<IEnumerable<Player>> GetAllPlayers()
         {
-            var result = _cache.Get(CacheKey) as IEnumerable<Player>;
+            var result = _cache.Get(CacheKey) as List<Player>;
 
             if (null != result)
             {
                 return result;
             }
 
-            var ids = new List<long>();
-            var followersIds = new TwitterFollowersIds
-            {
-                next_cursor = -1 //initiallize the cursor to the default value
-            };
-            do
-            {
-                followersIds = await _twitterRepo.GetFollowersIds(_twitterScreenName, followersIds.next_cursor);
-                if (null != followersIds)
-                {
-                    ids.AddRange(followersIds.ids);
-                }
-            } while (null != followersIds && followersIds.next_cursor > 0);
+            var ids = await GetAllTwitterIds();
 
             var dbRepo = new JumpFocusContext();
-            var dbUserTwitterIds = from p in dbRepo.Players
-                where p.Name != null && p.Name.Trim() != string.Empty
-                select p.TwitterId;
+            result = await dbRepo.Players.ToListAsync();
+
+            foreach (var player in result)
+            {
+                ids.Remove(player.TwitterId);
+            }
+
+            var dbUserTwitterIds = dbRepo.Players
+                        .Where(x => x != null && x.Name != null && x.Name.Trim() != string.Empty)
+                        .Select(x => x.TwitterId);
             ids.RemoveAll(dbUserTwitterIds.Contains);
 
             long[] users;
@@ -72,14 +68,35 @@ namespace JumpFocus.Proxies
                             Created = DateTime.Now
                         };
                         dbRepo.Players.AddOrUpdate(p);
+                        result.Add(p);
                     }
                 }
                 ids.RemoveAll(users.Contains);
-                dbRepo.SaveChanges();
+                await dbRepo.SaveChangesAsync();
+
             }
-            result = dbRepo.Players.ToList();
             _cache.Set(CacheKey, result, DateTimeOffset.Now.AddMinutes(15));
+
             return result;
+            //return new List<Player>();
+        }
+
+        private async Task<List<long>> GetAllTwitterIds()
+        {
+            var ids = new List<long>();
+            var followersIds = new TwitterFollowersIds
+            {
+                next_cursor = -1 //initiallize the cursor to the default value
+            };
+            do
+            {
+                followersIds = await _twitterRepo.GetFollowersIds(_twitterScreenName, followersIds.next_cursor);
+                if (null != followersIds)
+                {
+                    ids.AddRange(followersIds.ids);
+                }
+            } while (null != followersIds && followersIds.next_cursor > 0);
+            return ids;
         }
     }
 }

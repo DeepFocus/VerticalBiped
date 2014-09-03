@@ -1,13 +1,34 @@
-﻿<UserControl x:Class="JumpFocus.Views.WelcomeView"
+﻿<UserControl
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="Azure"  Height="900" Width="1200">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="JumpFocus.Views.WelcomeView"
+        Background="Azure" d:DesignWidth="640" d:DesignHeight="480" >
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="0.2*"/>
+            <RowDefinition Height="0.3*"/>
+            <RowDefinition />
+            <RowDefinition Height="0.4*"/>
+            <RowDefinition Height="0.3*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
         <Grid.Background>
-            <ImageBrush ImageSource="/JumpFocus;component/Resources/Images/intro.png"/>
+            <VisualBrush Stretch="Fill">
+                <VisualBrush.Visual>
+                    <MediaElement Name="VideoElement" LoadedBehavior="Manual" Source="{Binding BgVideo}" Volume="0.2" />
+                </VisualBrush.Visual>
+            </VisualBrush>
         </Grid.Background>
-        <Label Content="{Binding TwitterHandle}" Margin="388,76,304,746" FontSize="48" FontFamily="Lucida Console" />
-        <Image Source="{Binding TwitterPhoto}" HorizontalAlignment="Left" Height="156" Margin="230,76,0,0" VerticalAlignment="Top" Width="156"/>
-        <Label Content="{Binding PlayerName}" Margin="386,154,306,668" FontSize="36" FontFamily="Lucida Console" />
-        <Label Content="{Binding Guide}" Margin="388,0,304,822" FontSize="36" FontFamily="Lucida Console" />
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Text="{Binding Guide}" FontSize="56"  TextAlignment="Center" />
+        <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Grid.Column="0" Text="{Binding BottomGuide}" FontSize="42" TextAlignment="Center" Foreground="White" >
+            <TextBlock.Effect>
+                <BlurEffect Radius="3" />
+            </TextBlock.Effect>
+        </TextBlock>
+        <Image  Grid.Row="2" Grid.Column="0" Source="{Binding TwitterPhoto}" Height="156"  Width="156" />
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PlayerName}" FontSize="36" Height="156" TextAlignment="Center" Foreground="Blue"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding TwitterHandle}" FontSize="48" TextAlignment="Center" Foreground="Blue" />
     </Grid>
 </UserControl>

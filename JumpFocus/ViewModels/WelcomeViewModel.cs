@@ -1,6 +1,9 @@
 ﻿using System.Configuration;
 using System.IO;
 using System.Runtime.Caching;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using Caliburn.Micro;
 using JumpFocus.Models;
@@ -21,7 +24,6 @@ namespace JumpFocus.ViewModels
         private readonly string _twitterApiKey = ConfigurationManager.AppSettings["TwitterApiKey"];
         private readonly string _twitterApiSecret = ConfigurationManager.AppSettings["TwitterApiSecret"];
         private readonly string _twitterScreenName = ConfigurationManager.AppSettings["TwitterScreenName"];
-
         private Player _player;
 
         private string _guide;
@@ -34,6 +36,30 @@ namespace JumpFocus.ViewModels
                 NotifyOfPropertyChange(() => Guide);
             }
         }
+
+        private string _bottomGuide;
+        public string BottomGuide
+        {
+            get { return _bottomGuide; }
+            private set
+            {
+                _bottomGuide = value;
+                NotifyOfPropertyChange(() => BottomGuide);
+            }
+        }
+
+        private string _bgVideo;
+        public string BgVideo
+        {
+            get { return _bgVideo; }
+            private set
+            {
+                _bgVideo = value;
+                NotifyOfPropertyChange(() => BgVideo);
+            }
+        }
+
+
         private string _twitterHandle;
         public string TwitterHandle
         {
@@ -79,41 +105,78 @@ namespace JumpFocus.ViewModels
 
         protected async override void OnActivate()
         {
-            Guide = "Loading...";
+            var frameworkElement = GetView() as FrameworkElement;
+            if (frameworkElement != null)
+            {
+                var video = frameworkElement.FindName("VideoElement") as MediaElement;
+                if (video != null)
+                {
+                   video.LoadedBehavior = MediaState.Manual;
+                   video.Play();
+                   video.MediaEnded += (sender, args) =>
+                   {
+                        video.Position = TimeSpan.Zero;
+                        video.Play();
+                   };
+                }
+            }
+            
+            BottomGuide = "Waiting for Kinect...";
+            BgVideo = "Resources\\Videos\\Video.mp4";
             TwitterHandle = string.Empty;
             PlayerName = string.Empty;
             TwitterPhoto = null;
 
-            if (null == _sensor)
-            {
-                // on failure
-                return;
-            }
-
-            _sensor.Open();
-
-            // grab the audio stream
-            IReadOnlyList<AudioBeam> audioBeamList = _sensor.AudioSource.AudioBeams;
-            Stream audioStream = audioBeamList[0].OpenInputStream();
-
-            // create the convert stream
-            _convertStream = new KinectAudioStream(audioStream);
-
             var proxy = new PlayerProxy(_cache, _twitterApiKey, _twitterApiSecret, _twitterScreenName);
-            var handles = new List<SemanticResultValue>();
-            foreach (var p in await proxy.GetAllPlayers())
-            {
-                handles.Add(new SemanticResultValue(p.Name, p.Id));
-                handles.Add(new SemanticResultValue(p.TwitterHandle, p.Id));
-            }
+            var names = new Choices();
+            await InitKinectAsync();
+            BottomGuide = "Loading...";
+            await Task.Factory.StartNew(t => 
+                {
+                    try
+                    {
+                        var players = proxy.GetAllPlayers().Result;
+                        foreach (var p in players)
+                        {
+                            names.Add(new SemanticResultValue(p.Name, p.Id));
+                            names.Add(new SemanticResultValue(p.TwitterHandle, p.Id));
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        this.TryClose();    
+                    }
+                }, TaskCreationOptions.LongRunning);
 
             //Initialize the speech recognition engine
-            SpeechInitialization(handles, NameRecognized);
-            
+            SpeechInitialization(names, NameRecognized);
+            BottomGuide = string.Empty;
+            BgVideo = "Resources\\Videos\\Video2.mp4"; ;
             Guide = "What's your name?";
         }
 
-        private void SpeechInitialization(IEnumerable<SemanticResultValue> input, EventHandler<SpeechRecognizedEventArgs> success)
+        readonly TaskCompletionSource<bool> _resultCompletionSource = new TaskCompletionSource<bool>();
+        Task<bool> InitKinectAsync()
+        {
+            _sensor.Open();
+            _sensor.IsAvailableChanged += Sensor_IsAvailableChanged;
+            return _resultCompletionSource.Task;
+        }
+
+        private void Sensor_IsAvailableChanged(object sender, IsAvailableChangedEventArgs e)
+        {
+            if (_sensor != null && _sensor.IsAvailable && !_resultCompletionSource.Task.IsCompleted)
+            {
+                // grab the audio stream
+                IReadOnlyList<AudioBeam> audioBeamList = _sensor.AudioSource.AudioBeams;
+                Stream audioStream = audioBeamList[0].OpenInputStream();
+                _convertStream = new KinectAudioStream(audioStream);
+                _sensor.IsAvailableChanged -= Sensor_IsAvailableChanged;
+                _resultCompletionSource.SetResult(true);
+            }
+        }
+
+        private void SpeechInitialization(Choices names, EventHandler<SpeechRecognizedEventArgs> success)
         {
             RecognizerInfo ri = GetKinectRecognizer();
 
@@ -121,14 +184,8 @@ namespace JumpFocus.ViewModels
             {
                 _speechEngine = new SpeechRecognitionEngine(ri.Id);
 
-                var handles = new Choices();
-                foreach (var i in input)
-                {
-                    handles.Add(i);
-                }
-
                 var gb = new GrammarBuilder { Culture = ri.Culture };
-                gb.Append(handles);
+                gb.Append(names);
 
                 var g = new Grammar(gb);
                 _speechEngine.LoadGrammar(g);
@@ -175,11 +232,9 @@ namespace JumpFocus.ViewModels
                     TwitterPhoto = new BitmapImage(new Uri(_player.TwitterPhoto));
                 }
 
-                var handles = new List<SemanticResultValue>()
-                {
-                    new SemanticResultValue("yes", true),
-                    new SemanticResultValue("no", false)
-                };
+                var handles = new Choices();
+                handles.Add(new SemanticResultValue("yes", true));
+                handles.Add(new SemanticResultValue("no", false));
 
                 Guide = "Confirm with yes or no";
                 //Reinitialize the speech recognition engine for the yes/no
@@ -242,5 +297,6 @@ namespace JumpFocus.ViewModels
                 _sensor.Close();
             }
         }
+      
     }
 }

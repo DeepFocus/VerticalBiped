@@ -1,14 +1,6 @@
-﻿using Caliburn.Micro;
+﻿using System.Configuration;
+using Caliburn.Micro;
 using Microsoft.Kinect;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace JumpFocus.ViewModels
 {
@@ -18,6 +10,7 @@ namespace JumpFocus.ViewModels
         {
             var sensor = KinectSensor.GetDefault();
             ActivateItem(new WelcomeViewModel(this, sensor));
+            DisplayName = ConfigurationManager.AppSettings["appName"];
         }
 
         public override sealed void ActivateItem(IScreen item)//see http://goo.gl/krdbwl

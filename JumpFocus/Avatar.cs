@@ -274,13 +274,12 @@ namespace JumpFocus
             //head -> body
             _world.AddJoint(new DistanceJoint(_head, _torso, Vector2.Zero, Vector2.Zero));
             _world.AddJoint(new DistanceJoint(_head, _torso, Vector2.Zero, new Vector2(1.5f, 0f)));
-
-            //RevoluteJoint jHeadBody = new RevoluteJoint(_head, _torso,
-            //                                            new Vector2(0f, 1f),
-            //                                            new Vector2(0f, -2f));
-            //jHeadBody.CollideConnected = false;
-            //jHeadBody.MotorEnabled = false;
-            //_world.AddJoint(jHeadBody);
+            RevoluteJoint jHeadBody = new RevoluteJoint(_head, _torso,
+                                                        new Vector2(0f, 1f),
+                                                        new Vector2(0f, -2f));
+            jHeadBody.CollideConnected = false;
+            jHeadBody.MotorEnabled = false;
+            _world.AddJoint(jHeadBody);
 
             //upperLeftArm -> body
             _jLeftArmBody = new RevoluteJoint(_upperLeftArm, _torso,
