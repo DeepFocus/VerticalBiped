@@ -46,6 +46,8 @@ namespace JumpFocus
         private BitmapImage _catImg;
         private TransformedBitmap _catReversedImg;
 
+        private const float _coinsRadius = 1f;
+
         public int Coins { get; private set; }
 
         public float WorldWdth { get { return _worldWidth; } }
@@ -99,7 +101,7 @@ namespace JumpFocus
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
 
-                var coin = BodyFactory.CreateCircle(_world, 2f, 2f, position);
+                var coin = BodyFactory.CreateCircle(_world, _coinsRadius, 2f, position);
                 coin.BodyType = BodyType.Static;
                 coin.CollisionCategories = Category.Cat2;
                 coin.CollidesWith = Category.Cat1;
@@ -220,10 +222,10 @@ namespace JumpFocus
                     {
                         var imgContainer = new Rect
                         {
-                            X = ConvertUnits.ToDisplayUnits(bodyCoin.Position.X),
-                            Y = ConvertUnits.ToDisplayUnits(bodyCoin.Position.Y),
-                            Width = ConvertUnits.ToDisplayUnits(2f),
-                            Height = ConvertUnits.ToDisplayUnits(2f)
+                            X = ConvertUnits.ToDisplayUnits(bodyCoin.Position.X - _coinsRadius),
+                            Y = ConvertUnits.ToDisplayUnits(bodyCoin.Position.Y - _coinsRadius),
+                            Width = ConvertUnits.ToDisplayUnits(_coinsRadius * 2),
+                            Height = ConvertUnits.ToDisplayUnits(_coinsRadius * 2)
                         };
 
                         if (bg.FillContains(new RectangleGeometry(imgContainer)))
@@ -312,12 +314,12 @@ namespace JumpFocus
 
         bool _anchor_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
-            if (fixtureB.CollisionCategories == Category.Cat1)
-            {
-                //end of game
-                HasLanded = true;
-                Message = string.Format("Your score is {0}", Coins + Altitude);
-            }
+            //if (fixtureB.CollisionCategories == Category.Cat1)
+            //{
+            //    //end of game
+            //    HasLanded = true;
+            //    Message = string.Format("Your score is {0}", Coins + Altitude);
+            //}
 
             return true;
         }
