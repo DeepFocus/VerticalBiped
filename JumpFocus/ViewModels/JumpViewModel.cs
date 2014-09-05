@@ -39,7 +39,7 @@ namespace JumpFocus.ViewModels
         private DrawingGroup _drawingGroup;
 
         private float _readyCounter;
-        private int _countDown = 3;
+        private int _countDown = 1;
 
         //physiiiiiics duddddde
         private FP.Dynamics.World _world;
@@ -104,7 +104,7 @@ namespace JumpFocus.ViewModels
                 //Create the world
                 _gameWorld = new GameWorld(_world);
                 _gameWorld.GenerateWorld();
-
+                
                 //Delete the player
                 _avatar = null;
                 _currentUserId = 0;
@@ -155,8 +155,8 @@ namespace JumpFocus.ViewModels
                         {
                             _gameWorld.Draw(dc);
 
-                            //We already have a player
-                            if (_currentUserId > 0 && _bodies.Any(b => b.TrackingId == _currentUserId && b.IsTracked))
+                            //We have a player
+                            if (_bodies.Any(b => b.TrackingId == _currentUserId && b.IsTracked))
                             {
                                 var body = _bodies.First(b => b.TrackingId == _currentUserId);
 
@@ -172,7 +172,7 @@ namespace JumpFocus.ViewModels
                                     }
                                     else
                                     {
-                                        _gameWorld.Message = string.Format("Keep both hands closed for {0} sec", _countDown);
+                                        _gameWorld.Message = string.Format("Keep hands closed");
                                         _readyCounter = 0;
                                     }
 
@@ -192,7 +192,7 @@ namespace JumpFocus.ViewModels
                                 {
                                     _gameWorld.Message = string.Empty;
                                 }
-                                
+
                                 if (_gameWorld.HasLanded)
                                 {
                                     //mugshot
@@ -221,16 +221,25 @@ namespace JumpFocus.ViewModels
                             }
                             else
                             {
+                                //Set the closest body to be the one we use
+                                float distance = 1000f;
                                 for (byte index = 0; index < _bodies.Length; index++)
                                 {
-                                    if (_bodies[index].IsTracked)
+                                    if (_bodies[index].IsTracked
+                                        && _bodies[index].Joints[JointType.SpineMid].TrackingState == TrackingState.Tracked
+                                        && distance > _bodies[index].Joints[JointType.SpineMid].Position.Z)
                                     {
                                         _currentUserId = _bodies[index].TrackingId;
-                                        _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 10f))
+                                        if (null == _avatar)
                                         {
-                                            BodyIndex = index
-                                        };
-                                        break;
+                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 10f))
+                                            {
+                                                BodyIndex = index
+                                            };
+
+                                            _world.Step(0);
+                                        }
+                                        distance = _bodies[index].Joints[JointType.SpineMid].Position.Z;
                                     }
                                 }
                             }
@@ -239,10 +248,10 @@ namespace JumpFocus.ViewModels
                             {
                                 _avatar.Draw(dc);
                                 _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
-                                
+
                                 if (_gameWorld.HasLanded)
                                 {
-                                    System.Threading.Thread.Sleep(10000);
+                                    System.Threading.Thread.Sleep(3000);
                                     _conductor.ActivateItem(new WelcomeViewModel(_conductor, _sensor));
                                 }
                             }
