@@ -1,6 +1,9 @@
 ﻿using System.Configuration;
+using System.Data.Entity;
+using System.Data.Odbc;
 using System.IO;
 using System.Runtime.Caching;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,12 +22,18 @@ using JumpFocus.Proxies;
 namespace JumpFocus.ViewModels
 {
     class WelcomeViewModel : Screen
-    {
+    {  
+        private Player _player;
         private readonly ObjectCache _cache;
         private readonly string _twitterApiKey = ConfigurationManager.AppSettings["TwitterApiKey"];
         private readonly string _twitterApiSecret = ConfigurationManager.AppSettings["TwitterApiSecret"];
         private readonly string _twitterScreenName = ConfigurationManager.AppSettings["TwitterScreenName"];
-        private Player _player;
+        private readonly PlayerProxy _playersProxy;
+        private readonly System.Timers.Timer _aTimer = new System.Timers.Timer
+        {
+            Interval = 2000,
+            Enabled = true
+        };
 
         private string _guide;
         public string Guide
@@ -59,7 +68,6 @@ namespace JumpFocus.ViewModels
             }
         }
 
-
         private string _twitterHandle;
         public string TwitterHandle
         {
@@ -70,6 +78,7 @@ namespace JumpFocus.ViewModels
                 NotifyOfPropertyChange(() => TwitterHandle);
             }
         }
+
         private string _playerName;
         public string PlayerName
         {
@@ -80,6 +89,30 @@ namespace JumpFocus.ViewModels
                 NotifyOfPropertyChange(() => PlayerName);
             }
         }
+
+        private bool _inputTextBoxVisible;
+        public bool InputTextBoxVisible
+        {
+            get { return _inputTextBoxVisible; }
+            set
+            {
+                _inputTextBoxVisible = value;
+                NotifyOfPropertyChange(() => InputTextBoxVisible);
+            }
+        }
+
+        private string _inputTextValue;
+        public string InputTextValue
+        {
+            get { return _inputTextValue; }
+            set
+            {
+                _inputTextValue = value;
+                OnInput();
+                NotifyOfPropertyChange(() => InputTextValue);
+            }
+        }
+
         private BitmapImage _twitterPhoto;
         public BitmapImage TwitterPhoto
         {
@@ -101,10 +134,16 @@ namespace JumpFocus.ViewModels
             _conductor = conductor;
             _sensor = kinectSensor;
             _cache = new MemoryCache(GetType().FullName);
+            _playersProxy = new PlayerProxy(_cache, _twitterApiKey, _twitterApiSecret, _twitterScreenName);
+            _aTimer.Elapsed += (sender, args) =>
+            {
+                _isTyping = false;
+            };
         }
 
         protected async override void OnActivate()
         {
+            TextBox textBox = null;
             var frameworkElement = GetView() as FrameworkElement;
             if (frameworkElement != null)
             {
@@ -119,6 +158,7 @@ namespace JumpFocus.ViewModels
                         video.Play();
                    };
                 }
+                textBox = frameworkElement.FindName("TextInputBox") as TextBox;
             }
             
             BottomGuide = "Waiting for Kinect...";
@@ -126,8 +166,7 @@ namespace JumpFocus.ViewModels
             TwitterHandle = string.Empty;
             PlayerName = string.Empty;
             TwitterPhoto = null;
-
-            var proxy = new PlayerProxy(_cache, _twitterApiKey, _twitterApiSecret, _twitterScreenName);
+            
             var names = new Choices();
             await InitKinectAsync();
             BottomGuide = "Loading...";
@@ -135,7 +174,7 @@ namespace JumpFocus.ViewModels
                 {
                     try
                     {
-                        var players = proxy.GetAllPlayers().Result;
+                        var players = _playersProxy.GetAllPlayers().Result;
                         foreach (var p in players)
                         {
                             names.Add(new SemanticResultValue(p.Name, p.Id));
@@ -153,6 +192,11 @@ namespace JumpFocus.ViewModels
             BottomGuide = string.Empty;
             BgVideo = "Resources\\Videos\\Video2.mp4"; ;
             Guide = "What's your name?";
+            InputTextBoxVisible = true;
+            if (textBox != null)
+            {
+                textBox.Focus();
+            }
         }
 
         readonly TaskCompletionSource<bool> _resultCompletionSource = new TaskCompletionSource<bool>();
@@ -205,6 +249,40 @@ namespace JumpFocus.ViewModels
             }
         }
 
+        private bool _isTyping;
+        private async void OnInput()
+        {
+            if (!_isTyping)
+            {
+                _isTyping = true;
+                _aTimer.Start();
+                _player = await PlayerSearch(InputTextValue);
+                if (_player != null)
+                {
+                    UpdatePlayer();
+                }
+
+            }
+        }
+
+        private void UpdatePlayer()
+        {
+            TwitterHandle = '@' + _player.TwitterHandle;
+            PlayerName = _player.Name;
+            TwitterPhoto = new BitmapImage(new Uri(_player.TwitterPhoto));
+        }
+
+        private async Task<Player> PlayerSearch(string query)
+        {
+            Player found = null;
+            await Task.Run(() =>
+            {
+                var players = _playersProxy.GetAllPlayers().Result;
+                found = players.FirstOrDefault(x => x.Name.StartsWith(query) || x.TwitterHandle.StartsWith(query));
+            });
+            return found;
+        }
+
         /// <summary>
         /// Handler for recognized speech events.
         /// </summary>
@@ -226,10 +304,10 @@ namespace JumpFocus.ViewModels
                 {
                     var dbRepo = new JumpFocusContext();
                     _player = dbRepo.Players.Single(p => p.Id == (int) e.Result.Semantics.Value);
-
-                    TwitterHandle = '@' + _player.TwitterHandle;
-                    PlayerName = _player.Name;
-                    TwitterPhoto = new BitmapImage(new Uri(_player.TwitterPhoto));
+                    if (_player != null)
+                    {
+                        UpdatePlayer();
+                    }
                 }
 
                 var handles = new Choices();
@@ -279,6 +357,11 @@ namespace JumpFocus.ViewModels
             }
 
             return null;
+        }
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
         }
 
         protected override void OnDeactivate(bool close)
