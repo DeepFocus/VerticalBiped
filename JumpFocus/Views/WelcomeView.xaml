@@ -12,6 +12,10 @@
         </Style>
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
     </UserControl.Resources>
+    <UserControl.InputBindings>
+        <KeyBinding Command="{Binding EscapeCommand}" Key="Escape"/>
+        <KeyBinding Command="{Binding ConfirmCommand}" Key="Enter"/>
+    </UserControl.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="0.1*"/>
