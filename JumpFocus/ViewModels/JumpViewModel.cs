@@ -183,7 +183,7 @@ namespace JumpFocus.ViewModels
                                     }
                                 }
 
-                                if (_avatar.IsReadyToJump && !_avatar.HasJumped)
+                                if (_avatar.IsReadyToJump)
                                 {
                                     _avatar.Jump(body.Joints, stepSeconds);
                                 }
@@ -232,7 +232,7 @@ namespace JumpFocus.ViewModels
                                         _currentUserId = _bodies[index].TrackingId;
                                         if (null == _avatar)
                                         {
-                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 10f))
+                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 8f))
                                             {
                                                 BodyIndex = index
                                             };

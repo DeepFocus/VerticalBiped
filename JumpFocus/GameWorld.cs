@@ -25,7 +25,7 @@ namespace JumpFocus
 
         private float _worldWidth = 150f, _worldHeight = 150f;
         //private float _cameraWidth = 150f, _cameraHeight = 150f;
-        private float _cameraWidth = 30f, _cameraHeight = 30f;
+        private float _cameraWidth = 40f, _cameraHeight = 40f;
 
         private Rect _camera;
         private Body _anchor;

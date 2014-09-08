@@ -162,7 +162,9 @@
     <Resource Include="Resources\Fonts\TATTI___.TTF" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Page Include="Views\JumpView.xaml">
@@ -179,6 +181,9 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\Images\Avatar\Body.png" />
+    <Resource Include="Resources\Images\Avatar\LeftArm.png" />
+    <Resource Include="Resources\Images\Avatar\RightArm.png" />
     <Content Include="Resources\Videos\Video.mp4">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -190,16 +195,6 @@
     <Content Include="Lib\Microsoft.Speech.dll" />
     <Resource Include="Resources\Images\intro.png" />
     <Resource Include="Resources\Images\cat.png" />
-    <Resource Include="Resources\Images\Avatar\Head.png" />
-    <Resource Include="Resources\Images\Avatar\LowerLeftArm.png" />
-    <Resource Include="Resources\Images\Avatar\LowerLeftLeg.png" />
-    <Resource Include="Resources\Images\Avatar\LowerRightArm.png" />
-    <Resource Include="Resources\Images\Avatar\LowerRightLeg.png" />
-    <Resource Include="Resources\Images\Avatar\Torso.png" />
-    <Resource Include="Resources\Images\Avatar\UpperLeftArm.png" />
-    <Resource Include="Resources\Images\Avatar\UpperLeftLeg.png" />
-    <Resource Include="Resources\Images\Avatar\UpperRightArm.png" />
-    <Resource Include="Resources\Images\Avatar\UpperRightLeg.png" />
     <Resource Include="Resources\Images\background.png" />
     <Resource Include="Resources\Images\cloud.png" />
     <Resource Include="Resources\Images\coin.png" />

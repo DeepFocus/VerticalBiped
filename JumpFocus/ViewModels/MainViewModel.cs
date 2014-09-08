@@ -9,7 +9,8 @@ namespace JumpFocus.ViewModels
         public MainViewModel()
         {
             var sensor = KinectSensor.GetDefault();
-            ActivateItem(new WelcomeViewModel(this, sensor));
+            //ActivateItem(new WelcomeViewModel(this, sensor));
+            ActivateItem(new JumpViewModel(this, sensor, new Models.Player()));
             DisplayName = ConfigurationManager.AppSettings["appName"];
         }
 
