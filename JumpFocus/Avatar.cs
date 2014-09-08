@@ -21,12 +21,12 @@ namespace JumpFocus
     {
         private World _world;
 
+        private const float TorsoDensity = 20f;
         private const float ArmDensity = 10f;
         private const float LimbAngularDamping = 7f;
 
         private Body _torso;
         private RectangleGeometry _torsoGeo;
-
         private Body _leftArm;
         private RectangleGeometry _leftArmGeo;
         private Body _rightArm;
@@ -65,12 +65,11 @@ namespace JumpFocus
         private void CreateBody(Vector2 position)
         {
             //Torso
-            _torso = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_torsoImg.Width), ConvertUnits.ToSimUnits(_torsoImg.Height), 20f);
+            _torso = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_torsoImg.Width), ConvertUnits.ToSimUnits(_torsoImg.Height), TorsoDensity);
             _torso.BodyType = BodyType.Static;
             _torso.Mass = 50f;
             _torso.Position = position;
-            _torso.CollidesWith = Category.Cat2;
-            _torso.CollisionCategories = Category.Cat1;
+            _torso.CollisionGroup = -1;
 
             //Left Arm
             _leftArm = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_leftArmImg.Width), ConvertUnits.ToSimUnits(_leftArmImg.Height), ArmDensity);
@@ -78,9 +77,8 @@ namespace JumpFocus
             _leftArm.AngularDamping = LimbAngularDamping;
             _leftArm.Mass = 10f;
             _leftArm.Rotation = 1.4f;
-            _leftArm.Position = position + new Vector2(0f, 2.5f);
-            _leftArm.CollidesWith = Category.Cat2;
-            _leftArm.CollisionCategories = Category.Cat1;
+            _leftArm.Position = position + new Vector2(-0.9f, 0.4f);
+            _leftArm.CollisionGroup = -1;
 
             //Right Arm
 
@@ -89,25 +87,24 @@ namespace JumpFocus
             _rightArm.AngularDamping = LimbAngularDamping;
             _rightArm.Mass = 10f;
             _rightArm.Rotation = -1.4f;
-            _rightArm.Position = position + new Vector2(1.7f, 3.0f);
-            _rightArm.CollidesWith = Category.Cat2;
-            _rightArm.CollisionCategories = Category.Cat1;
+            _rightArm.Position = position + new Vector2(0.9f, 0.4f);
+            _rightArm.CollisionGroup = -1;
         }
 
         private void CreateJoints()
         {
             //lowerLeftArm -> upperLeftArm
             _jLeftArm = new RevoluteJoint(_leftArm, _torso,
-                                                        new Vector2(0.3f, 0.1f),
-                                                        new Vector2(0.2f, 2.7f));
+                                                        new Vector2(0.25f, 0f),
+                                                        new Vector2(-0.75f, -1f));
             _jLeftArm.CollideConnected = false;
             _jLeftArm.MotorEnabled = true;
             _world.AddJoint(_jLeftArm);
 
             //lowerRightArm -> upperRightArm
             _jRightArm = new RevoluteJoint(_rightArm, _torso,
-                                                        new Vector2(0.3f, 0.1f),
-                                                        new Vector2(1.6f, 2.7f));
+                                                        new Vector2(0.25f, 0f),
+                                                        new Vector2(0.75f, -1f));
             _jRightArm.CollideConnected = false;
             _jRightArm.MotorEnabled = true;
             _world.AddJoint(_jRightArm);
@@ -123,8 +120,8 @@ namespace JumpFocus
             _torsoGeo = new RectangleGeometry(new Rect
             {
                 //The center is the center in Geometry, not the top left
-                X = ConvertUnits.ToDisplayUnits(_torso.Position.X),
-                Y = ConvertUnits.ToDisplayUnits(_torso.Position.Y),
+                X = ConvertUnits.ToDisplayUnits(_torso.Position.X) - _torsoImg.Width / 2,
+                Y = ConvertUnits.ToDisplayUnits(_torso.Position.Y) - _torsoImg.Height / 2,
                 Width = _torsoImg.Width,
                 Height = _torsoImg.Height
             });

@@ -29,6 +29,7 @@ namespace JumpFocus
 
         private Rect _camera;
         private Body _anchor;
+        private List<Body> _ballBodies;
         private List<Body> _coins;
         private List<Body> _clouds;
         private List<Body> _cats;
@@ -94,6 +95,20 @@ namespace JumpFocus
             _anchor.OnCollision += _anchor_OnCollision;
             _anchor.Restitution = 1f;
 
+
+            //DEBUG Ball stuff
+            _ballBodies = new List<Body>();
+            //for (int i = 1; i < 100; i++)
+            //{
+            //    var position = new Vector2(i);
+            //    var ball = BodyFactory.CreateCircle(_world, 0.5f, 1f, position);
+            //    ball.BodyType = BodyType.Dynamic;
+            //    ball.Mass = 10f;
+            //    ball.CollisionCategories = Category.Cat1;
+            //    ball.CollidesWith = Category.Cat1;
+            //    _ballBodies.Add(ball);
+            //}
+
             //Creates Dogecoins
             _coins = new List<Body>();
             var rand = new Random();
@@ -112,8 +127,7 @@ namespace JumpFocus
             }
 
             //Add clouds
-
-            ////Creates the cloud in the physic engine from the image
+            //Creates the cloud in the physic engine from the image
             int nStride = (_cloudImg.PixelWidth * _cloudImg.Format.BitsPerPixel + 7) / 8;
             uint[] pixels = new uint[_cloudImg.PixelHeight * nStride];
             _cloudImg.CopyPixels(pixels, nStride, 0);
@@ -166,7 +180,7 @@ namespace JumpFocus
             dc.DrawGeometry(_skyBrush, null, bg);
 
             var floorHeight = (ConvertUnits.ToDisplayUnits(_cameraHeight) + _camera.Y) - ConvertUnits.ToDisplayUnits(_worldHeight);
-            if (floorHeight > 0)
+            if (floorHeight > 1)
             {
                 //Floor
                 var floorRect = new Rect
@@ -210,6 +224,20 @@ namespace JumpFocus
                     Y = _camera.Y + (_camera.Height / 4)
                 };
                 dc.DrawText(messageText, location);
+            }
+
+            //Draw balls
+            foreach (var ball in _ballBodies)
+            {
+                var point = new Point();
+                point.Y = ConvertUnits.ToDisplayUnits(ball.Position.Y);
+                point.X = ConvertUnits.ToDisplayUnits(ball.Position.X);
+                var ballGeo = new EllipseGeometry(point, ConvertUnits.ToDisplayUnits(0.5f), ConvertUnits.ToDisplayUnits(0.5f));
+
+                if (bg.FillContains(ballGeo))
+                {
+                    dc.DrawGeometry(new SolidColorBrush(Colors.Azure), null, ballGeo);
+                }
             }
 
             //Draw coins
