@@ -342,12 +342,12 @@ namespace JumpFocus
 
         bool _anchor_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
-            //if (fixtureB.CollisionCategories == Category.Cat1)
-            //{
-            //    //end of game
-            //    HasLanded = true;
-            //    Message = string.Format("Your score is {0}", Coins + Altitude);
-            //}
+            if (fixtureB.CollisionCategories == Category.Cat1)
+            {
+                //end of game
+                HasLanded = true;
+                Message = string.Format("Your score is {0}", Coins + Altitude);
+            }
 
             return true;
         }

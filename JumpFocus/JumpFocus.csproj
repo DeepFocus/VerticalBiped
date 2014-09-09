@@ -125,6 +125,7 @@
     <Compile Include="Proxies\PlayerProxy.cs" />
     <Compile Include="Repositories\TwitterRepository.cs" />
     <Compile Include="ViewModels\JumpViewModel.cs" />
+    <Compile Include="ViewModels\LeaderBoardViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\WelcomeViewModel.cs" />
   </ItemGroup>
@@ -168,6 +169,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="Views\JumpView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\LeaderBoardView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

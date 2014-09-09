@@ -1,5 +1,5 @@
 ﻿<UserControl x:Class="JumpFocus.Views.JumpView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Height="900" Width="1200">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
         <Image Name="Video" Stretch="Fill" />
 </UserControl>
