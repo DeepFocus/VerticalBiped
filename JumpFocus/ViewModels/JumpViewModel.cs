@@ -102,7 +102,7 @@ namespace JumpFocus.ViewModels
                 FP.ConvertUnits.SetDisplayUnitToSimUnitRatio(128f);
 
                 //Create the world
-                _gameWorld = new GameWorld(_world);
+                _gameWorld = new GameWorld(_world, SystemParameters.WorkArea);
                 _gameWorld.GenerateWorld();
                 
                 //Delete the player
@@ -210,13 +210,10 @@ namespace JumpFocus.ViewModels
 
                                     _player.Dogecoins += _gameWorld.Coins;
 
-                                    var db = new JumpFocusContext();
-                                    db.Histories.Add(history);
-                                    db.Players.AddOrUpdate(_player);
-                                    db.SaveChanges();
-
-                                    System.Threading.Thread.Sleep(10000);
-                                    _conductor.ActivateItem(new WelcomeViewModel(_conductor, _sensor));
+                                    //var db = new JumpFocusContext();
+                                    //db.Histories.Add(history);
+                                    //db.Players.AddOrUpdate(_player);
+                                    //db.SaveChanges();
                                 }
                             }
                             else
@@ -251,8 +248,8 @@ namespace JumpFocus.ViewModels
 
                                 if (_gameWorld.HasLanded)
                                 {
-                                    System.Threading.Thread.Sleep(3000);
-                                    _conductor.ActivateItem(new WelcomeViewModel(_conductor, _sensor));
+                                    System.Threading.Thread.Sleep(1000);
+                                    _conductor.ActivateItem(new JumpViewModel(_conductor, _sensor, _player));
                                 }
                             }
                         }

@@ -24,8 +24,7 @@ namespace JumpFocus
         private World _world;
 
         private float _worldWidth = 150f, _worldHeight = 150f;
-        //private float _cameraWidth = 150f, _cameraHeight = 150f;
-        private float _cameraWidth = 40f, _cameraHeight = 40f;
+        private readonly float _cameraWidth = 20f, _cameraHeight = 40f;
 
         private Rect _camera;
         private Body _anchor;
@@ -59,8 +58,11 @@ namespace JumpFocus
 
         public string Message { get; set; }
 
-        public GameWorld(World world)
+        public GameWorld(World world, Rect workArea)
         {
+            //Avoid distortion
+            _cameraHeight = (float)((_cameraWidth * workArea.Height) / workArea.Width);
+
             _world = world;
 
             _cloudImg = new BitmapImage(_cloudUri);
@@ -162,7 +164,7 @@ namespace JumpFocus
                 var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
                 cat.BodyType = BodyType.Dynamic;
                 cat.IgnoreGravity = true;
-                cat.Mass = 10f;
+                cat.Mass = 100f;
                 //cat.IgnoreGravity = true;
                 cat.CollisionCategories = Category.Cat3;
                 cat.CollidesWith = Category.Cat1;
