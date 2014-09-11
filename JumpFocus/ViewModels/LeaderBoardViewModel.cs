@@ -1,11 +1,7 @@
 ﻿using Caliburn.Micro;
 using JumpFocus.DAL;
-using JumpFocus.Models;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JumpFocus.ViewModels
 {
@@ -13,8 +9,8 @@ namespace JumpFocus.ViewModels
     {
         private readonly IConductor _conductor;
 
-        private IEnumerable<History> _scores;
-        public IEnumerable<History> Scores
+        private IEnumerable<LeaderScoreItem> _scores;
+        public IEnumerable<LeaderScoreItem> Scores
         {
             get { return _scores; }
             private set
@@ -24,19 +20,50 @@ namespace JumpFocus.ViewModels
             }
         }
 
-
         public LeaderBoardViewModel(IConductor conductor)
         {
             _conductor = conductor;
         }
 
         protected override void OnActivate()
-        {
+        {   
             var dbRepo = new JumpFocusContext();
-            Scores = dbRepo.Histories.OrderByDescending(h => h.Altitude + h.Dogecoins).Take(10).ToList();
+            var i = 0;
+            Scores = dbRepo.Histories.OrderByDescending(h => h.Altitude + h.Dogecoins)
+                .Select(x => new LeaderScoreItem
+                {
+                    Name = x.Player.TwitterHandle,
+                    Score = x.Altitude + x.Dogecoins
+                }).Take(10).ToList();
 
+            foreach (var s in Scores)
+            {
+                s.Rank = ++i;
+                switch (s.Rank)
+                {
+                    case 1:
+                        s.RankSuperscript = "ST";
+                        break;
+                    case 2:
+                        s.RankSuperscript = "ND";
+                        break;
+                    case 3:
+                        s.RankSuperscript = "RD";
+                        break;
+                    default:
+                        s.RankSuperscript = "TH";
+                        break;
+                }
+            }
             base.OnActivate();
-            //_conductor.ActivateItem(new MainViewModel());
         }
+    }
+
+    class LeaderScoreItem
+    {
+        public int Rank { get; set; }
+        public string RankSuperscript { get; set; }
+        public string Name { get; set; }
+        public int Score { get; set; }
     }
 }

@@ -189,6 +189,9 @@
     <Resource Include="Resources\Images\Avatar\Body.png" />
     <Resource Include="Resources\Images\Avatar\LeftArm.png" />
     <Resource Include="Resources\Images\Avatar\RightArm.png" />
+    <Resource Include="Resources\Images\Leaderboard_left.png" />
+    <Resource Include="Resources\Images\Leaderboard_UpperLeft.png" />
+    <Resource Include="Resources\Images\Leaderboard_Right.png" />
     <Content Include="Resources\Videos\Video.mp4">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
