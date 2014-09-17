@@ -24,7 +24,7 @@ namespace JumpFocus
         private World _world;
 
         private float _worldWidth = 150f, _worldHeight = 150f;
-        private readonly float _cameraWidth = 20f, _cameraHeight = 40f;
+        private readonly float _cameraWidth = 40f, _cameraHeight = 40f;
 
         private Rect _camera;
         private Body _anchor;
@@ -61,8 +61,7 @@ namespace JumpFocus
         public GameWorld(World world, Rect workArea)
         {
             //Avoid distortion
-            _cameraHeight = (float)((_cameraWidth * workArea.Height) / workArea.Width);
-
+            _cameraWidth = (float) ((workArea.Width * _cameraHeight) / workArea.Height);
             _world = world;
 
             _cloudImg = new BitmapImage(_cloudUri);

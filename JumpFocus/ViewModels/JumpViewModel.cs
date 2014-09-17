@@ -229,7 +229,7 @@ namespace JumpFocus.ViewModels
                                         _currentUserId = _bodies[index].TrackingId;
                                         if (null == _avatar)
                                         {
-                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 8f))
+                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 4f))
                                             {
                                                 BodyIndex = index
                                             };
