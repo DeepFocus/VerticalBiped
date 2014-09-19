@@ -142,6 +142,7 @@ namespace JumpFocus.ViewModels
                             if (!_gameWorld.HasLanded)
                             {
                                 _world.Step(stepSeconds);
+                                _gameWorld.Step();
                             }
                             _stopwatch.Reset();
                         }

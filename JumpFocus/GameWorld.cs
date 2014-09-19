@@ -21,30 +21,31 @@ namespace JumpFocus
 {
     class GameWorld
     {
-        private World _world;
+        private readonly World _world;
 
-        private float _worldWidth = 150f, _worldHeight = 150f;
+        private float _worldWidth = 150f, _worldHeight = 250f;
         private readonly float _cameraWidth = 40f, _cameraHeight = 40f;
 
         private Rect _camera;
         private Body _anchor;
+        private Body _floor;
         private List<Body> _ballBodies;
         private List<Body> _coins;
         private List<Body> _clouds;
         private List<Body> _cats;
 
-        private Brush _floorBrush = new SolidColorBrush(Color.FromRgb(236, 124, 95));
-        private Brush _skyBrush = new SolidColorBrush(Color.FromRgb(236, 241, 237));
-        private Brush _textBrush = new SolidColorBrush(Color.FromRgb(59, 66, 78));
-        private Typeface _typeface = new Typeface("Verdana");
-        private Uri _cloudUri = new Uri("pack://application:,,,/Resources/Images/cloud.png");
-        private Uri _coinUri = new Uri("pack://application:,,,/Resources/Images/coin.png");
-        private Uri _catUri = new Uri("pack://application:,,,/Resources/Images/cat.png");
+        private readonly Brush _floorBrush = new SolidColorBrush(Color.FromRgb(236, 124, 95));
+        private readonly Brush _skyBrush = new SolidColorBrush(Color.FromRgb(236, 241, 237));
+        private readonly Brush _textBrush = new SolidColorBrush(Color.FromRgb(59, 66, 78));
+        private readonly Typeface _typeface = new Typeface("Verdana");
+        private readonly Uri _cloudUri = new Uri("pack://application:,,,/Resources/Images/cloud.png");
+        private readonly Uri _coinUri = new Uri("pack://application:,,,/Resources/Images/coin.png");
+        private readonly Uri _catUri = new Uri("pack://application:,,,/Resources/Images/cat.png");
 
-        private BitmapImage _cloudImg;
-        private BitmapImage _coinImg;
-        private BitmapImage _catImg;
-        private TransformedBitmap _catReversedImg;
+        private readonly BitmapImage _cloudImg;
+        private readonly BitmapImage _coinImg;
+        private readonly BitmapImage _catImg;
+        private readonly TransformedBitmap _catReversedImg;
 
         private const float _coinsRadius = 1f;
 
@@ -60,7 +61,7 @@ namespace JumpFocus
 
         public GameWorld(World world, Rect workArea)
         {
-            //Avoid distortion
+            //Avoid distortion for full screen
             _cameraWidth = (float) ((workArea.Width * _cameraHeight) / workArea.Height);
             _world = world;
 
@@ -70,19 +71,33 @@ namespace JumpFocus
             _catReversedImg = new TransformedBitmap(_catImg, new ScaleTransform(-1, 1));
         }
 
-        public void MoveCameraTo(double X, double Y)
+        public void Step()
         {
-            _camera.X = X - ConvertUnits.ToDisplayUnits(_cameraWidth / 2);
-            _camera.Y = Y - ConvertUnits.ToDisplayUnits(_cameraHeight / 2);
+            foreach (var cat in _cats)
+            {
+                //check positions with margins to avoid pushing the player out of the bounds
+                if (cat.Position.X < ConvertUnits.ToSimUnits(_catImg.Width) || cat.Position.X > _worldWidth - ConvertUnits.ToSimUnits(_catImg.Width))
+                {
+                    cat.LinearVelocity = -cat.LinearVelocity;
+                }
+            }
+        }
+
+        public void MoveCameraTo(double x, double y)
+        {
+            _camera.X = x - ConvertUnits.ToDisplayUnits(_cameraWidth / 2);
+            _camera.Y = y - ConvertUnits.ToDisplayUnits(_cameraHeight / 2);
         }
 
         public void GenerateWorld()
         {
-            Vertices borders = new Vertices(4);
-            borders.Add(new Vector2(0, 0));
-            borders.Add(new Vector2(_worldWidth, 0));
-            borders.Add(new Vector2(_worldWidth, _worldHeight));
-            borders.Add(new Vector2(0, _worldHeight));
+            var borders = new Vertices
+            {
+                new Vector2(0, 0),
+                new Vector2(_worldWidth, 0),
+                new Vector2(_worldWidth, _worldHeight),
+                new Vector2(0, _worldHeight)
+            };
 
             _camera = new Rect
             {
@@ -93,9 +108,13 @@ namespace JumpFocus
             };
 
             _anchor = BodyFactory.CreateLoopShape(_world, borders);
-            _anchor.OnCollision += _anchor_OnCollision;
+            //_anchor.OnCollision += _anchor_OnCollision;
             _anchor.Restitution = 1f;
 
+            //Floor needs to be seperated because it triggers the end of the game
+            _floor = BodyFactory.CreateEdge(_world, new Vector2(-_worldWidth, _worldHeight), new Vector2(2 * _worldWidth, _worldHeight));
+            _floor.Restitution = 1f;
+            _floor.OnCollision += _floor_OnCollision;
 
             //DEBUG Ball stuff
             _ballBodies = new List<Body>();
@@ -105,7 +124,7 @@ namespace JumpFocus
             //    var ball = BodyFactory.CreateCircle(_world, 0.5f, 1f, position);
             //    ball.BodyType = BodyType.Dynamic;
             //    ball.Mass = 10f;
-            //    ball.CollisionCategories = Category.Cat1;
+            //    ball.CollisionCategories = Category.Cat4;
             //    ball.CollidesWith = Category.Cat1;
             //    _ballBodies.Add(ball);
             //}
@@ -113,7 +132,7 @@ namespace JumpFocus
             //Creates Dogecoins
             _coins = new List<Body>();
             var rand = new Random();
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < 100; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
 
@@ -141,7 +160,7 @@ namespace JumpFocus
 
             _clouds = new List<Body>();
             rand = new Random();
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < 150; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
                 //Create a single body with multiple fixtures
@@ -157,23 +176,19 @@ namespace JumpFocus
             //Add cats
             _cats = new List<Body>();
             rand = new Random();
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i <30; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
                 var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
-                cat.BodyType = BodyType.Dynamic;
-                cat.IgnoreGravity = true;
-                cat.Mass = 100f;
-                //cat.IgnoreGravity = true;
-                cat.CollisionCategories = Category.Cat3;
-                cat.CollidesWith = Category.Cat1;
+                cat.BodyType = BodyType.Kinematic; // so they don't stop
 
                 float speed = rand.Next(0, 2) == 1 ? rand.Next(1000, 5000) : -rand.Next(1000, 5000);
-                cat.ApplyLinearImpulse(new Vector2(speed, 0));
+                cat.LinearVelocity = new Vector2(speed, 0);
+
                 _cats.Add(cat);
             }
         }
-
+        
         public void Draw(DrawingContext dc)
         {
             //Background
@@ -335,13 +350,13 @@ namespace JumpFocus
 
             if (body.LinearVelocity.Y > 0)
             {
-                fixtureB.Body.ApplyLinearImpulse(new Vector2(0, 1f));
+                fixtureB.Body.ApplyLinearImpulse(new Vector2(0, 100f));
             }
 
             return false;
         }
 
-        bool _anchor_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
+        bool _floor_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
             if (fixtureB.CollisionCategories == Category.Cat1)
             {
