@@ -192,6 +192,9 @@
     <Resource Include="Resources\Images\Leaderboard_left.png" />
     <Resource Include="Resources\Images\Leaderboard_UpperLeft.png" />
     <Resource Include="Resources\Images\Leaderboard_Right.png" />
+    <Resource Include="Resources\Images\circle.png" />
+    <Resource Include="Resources\Images\diamond.png" />
+    <Resource Include="Resources\Images\x.png" />
     <Content Include="Resources\Videos\Video.mp4">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

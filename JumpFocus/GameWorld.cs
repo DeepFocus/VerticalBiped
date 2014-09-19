@@ -34,6 +34,11 @@ namespace JumpFocus
         private List<Body> _clouds;
         private List<Body> _cats;
 
+        //decorations
+        private List<Rect> _xs;
+        private List<Rect> _circles;
+        private List<Rect> _diamonds;
+
         private readonly Brush _floorBrush = new SolidColorBrush(Color.FromRgb(236, 124, 95));
         private readonly Brush _skyBrush = new SolidColorBrush(Color.FromRgb(236, 241, 237));
         private readonly Brush _textBrush = new SolidColorBrush(Color.FromRgb(59, 66, 78));
@@ -42,10 +47,18 @@ namespace JumpFocus
         private readonly Uri _coinUri = new Uri("pack://application:,,,/Resources/Images/coin.png");
         private readonly Uri _catUri = new Uri("pack://application:,,,/Resources/Images/cat.png");
 
+        private readonly Uri _xUri = new Uri("pack://application:,,,/Resources/Images/x.png");
+        private readonly Uri _circleUri = new Uri("pack://application:,,,/Resources/Images/circle.png");
+        private readonly Uri _diamondUri = new Uri("pack://application:,,,/Resources/Images/diamond.png");
+
         private readonly BitmapImage _cloudImg;
         private readonly BitmapImage _coinImg;
         private readonly BitmapImage _catImg;
         private readonly TransformedBitmap _catReversedImg;
+
+        private readonly BitmapImage _xImg;
+        private readonly BitmapImage _circleImg;
+        private readonly BitmapImage _diamondImg;
 
         private const float _coinsRadius = 1f;
 
@@ -62,13 +75,17 @@ namespace JumpFocus
         public GameWorld(World world, Rect workArea)
         {
             //Avoid distortion for full screen
-            _cameraWidth = (float) ((workArea.Width * _cameraHeight) / workArea.Height);
+            _cameraWidth = (float)((workArea.Width * _cameraHeight) / workArea.Height);
             _world = world;
 
             _cloudImg = new BitmapImage(_cloudUri);
             _coinImg = new BitmapImage(_coinUri);
             _catImg = new BitmapImage(_catUri);
             _catReversedImg = new TransformedBitmap(_catImg, new ScaleTransform(-1, 1));
+
+            _xImg = new BitmapImage(_xUri);
+            _circleImg = new BitmapImage(_circleUri);
+            _diamondImg = new BitmapImage(_diamondUri);
         }
 
         public void Step()
@@ -176,7 +193,7 @@ namespace JumpFocus
             //Add cats
             _cats = new List<Body>();
             rand = new Random();
-            for (int i = 0; i <30; i++)
+            for (int i = 0; i < 30; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
                 var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
@@ -187,8 +204,23 @@ namespace JumpFocus
 
                 _cats.Add(cat);
             }
+
+            //decorations
+            _xs = new List<Rect>();
+            _circles = new List<Rect>();
+            _diamonds = new List<Rect>();
+
+            var w = ConvertUnits.ToDisplayUnits(_worldWidth);
+            var h = ConvertUnits.ToDisplayUnits(_worldHeight);
+
+            for (int i = 0; i < 200; i++)
+            {
+                _xs.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _xImg.Width, _xImg.Height));
+                _circles.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _circleImg.Width, _circleImg.Height));
+                //_diamonds.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _diamondImg.Width, _diamondImg.Height));
+            }
         }
-        
+
         public void Draw(DrawingContext dc)
         {
             //Background
@@ -220,7 +252,7 @@ namespace JumpFocus
 
             //Altitude
             var alt = ConvertUnits.ToSimUnits(_camera.Location.Y);
-            alt = _worldHeight - alt;
+            alt = _worldHeight - alt - _cameraHeight;
             if (alt > Altitude)
             {
                 Altitude = (int)alt;
@@ -322,6 +354,29 @@ namespace JumpFocus
                     }
                 }
             }
+
+            //Draw decorations
+            foreach (var x in _xs)
+            {
+                if (bg.FillContains(x.Location))
+                {
+                    dc.DrawImage(_xImg, x);
+                }
+            }
+            foreach (var circle in _circles)
+            {
+                if (bg.FillContains(circle.Location))
+                {
+                    dc.DrawImage(_circleImg, circle);
+                }
+            }
+            foreach (var diamond in _diamonds)
+            {
+                if (bg.FillContains(diamond.Location))
+                {
+                    dc.DrawImage(_diamondImg, diamond);
+                }
+            }
         }
 
         bool coin_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
@@ -345,7 +400,7 @@ namespace JumpFocus
             //Needed for the world boundaries
             if (body.BodyType == BodyType.Static)
             {
-                return true;
+                return false;
             }
 
             if (body.LinearVelocity.Y > 0)
