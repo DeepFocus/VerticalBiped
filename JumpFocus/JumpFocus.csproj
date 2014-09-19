@@ -195,6 +195,7 @@
     <Resource Include="Resources\Images\circle.png" />
     <Resource Include="Resources\Images\diamond.png" />
     <Resource Include="Resources\Images\x.png" />
+    <Resource Include="Resources\Images\fire.png" />
     <Content Include="Resources\Videos\Video.mp4">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

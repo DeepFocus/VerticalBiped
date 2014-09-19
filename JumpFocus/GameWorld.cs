@@ -47,18 +47,21 @@ namespace JumpFocus
         private readonly Uri _coinUri = new Uri("pack://application:,,,/Resources/Images/coin.png");
         private readonly Uri _catUri = new Uri("pack://application:,,,/Resources/Images/cat.png");
 
+        private readonly Uri _fireUri = new Uri("pack://application:,,,/Resources/Images/fire.png");
         private readonly Uri _xUri = new Uri("pack://application:,,,/Resources/Images/x.png");
         private readonly Uri _circleUri = new Uri("pack://application:,,,/Resources/Images/circle.png");
         private readonly Uri _diamondUri = new Uri("pack://application:,,,/Resources/Images/diamond.png");
 
-        private readonly BitmapImage _cloudImg;
-        private readonly BitmapImage _coinImg;
-        private readonly BitmapImage _catImg;
-        private readonly TransformedBitmap _catReversedImg;
+        private readonly BitmapSource _cloudImg;
+        private readonly BitmapSource _coinImg;
+        private readonly BitmapSource _catImg;
+        private readonly BitmapSource _catReversedImg;
 
-        private readonly BitmapImage _xImg;
-        private readonly BitmapImage _circleImg;
-        private readonly BitmapImage _diamondImg;
+        private readonly BitmapSource _fireImg;
+        private readonly BitmapSource _fireReversedImg;
+        private readonly BitmapSource _xImg;
+        private readonly BitmapSource _circleImg;
+        private readonly BitmapSource _diamondImg;
 
         private const float _coinsRadius = 1f;
 
@@ -83,6 +86,8 @@ namespace JumpFocus
             _catImg = new BitmapImage(_catUri);
             _catReversedImg = new TransformedBitmap(_catImg, new ScaleTransform(-1, 1));
 
+            _fireImg = new BitmapImage(_fireUri);
+            _fireReversedImg = new TransformedBitmap(_fireImg, new ScaleTransform(-1, 1));
             _xImg = new BitmapImage(_xUri);
             _circleImg = new BitmapImage(_circleUri);
             _diamondImg = new BitmapImage(_diamondUri);
@@ -347,10 +352,39 @@ namespace JumpFocus
                     if (cat.LinearVelocity.X > 0)
                     {
                         dc.DrawImage(_catReversedImg, imgContainer);
+                        if (DateTime.UtcNow.Ticks % 5 != 0)
+                        {
+                            var fireContainer = new Rect
+                            {
+                                X = ConvertUnits.ToDisplayUnits(cat.Position.X) + _catImg.Width,
+                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height - _fireImg.Height,
+                                Width = _fireImg.PixelWidth,
+                                Height = _fireImg.PixelHeight
+                            };
+                            if (bg.FillContains(new RectangleGeometry(fireContainer)))
+                            {
+                                dc.DrawImage(_fireReversedImg, fireContainer);
+                            }
+                        }
                     }
                     else
                     {
                         dc.DrawImage(_catImg, imgContainer);
+                        if (DateTime.UtcNow.Ticks % 5 != 0)
+                        {
+                            var fireContainer = new Rect
+                            {
+                                X = ConvertUnits.ToDisplayUnits(cat.Position.X) - _catImg.Width,
+                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height - _fireImg.Height,
+                                Width = _fireImg.PixelWidth,
+                                Height = _fireImg.PixelHeight
+                            };
+
+                            if (bg.FillContains(new RectangleGeometry(fireContainer)))
+                            {
+                                dc.DrawImage(_fireImg, fireContainer);
+                            }
+                        }
                     }
                 }
             }
