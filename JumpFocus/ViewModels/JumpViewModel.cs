@@ -173,7 +173,7 @@ namespace JumpFocus.ViewModels
                                     }
                                     else
                                     {
-                                        _gameWorld.Message = string.Format("Keep hands closed");
+                                        _gameWorld.Message = string.Format("Keep both hands closed");
                                         _readyCounter = 0;
                                     }
 
@@ -197,26 +197,38 @@ namespace JumpFocus.ViewModels
                                 if (_gameWorld.HasLanded)
                                 {
                                     _avatar.Land();
+                                }
 
-                                    //mugshot
-                                    var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body);
-                                    var filePath = SaveHeadshot(headBitmap);
+                                if (null != _avatar)
+                                {
+                                    _avatar.Draw(dc);
+                                    _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
 
-                                    var history = new History
+                                    if (_gameWorld.HasLanded && _gameWorld.Landed.AddSeconds(5) < DateTime.Now)
                                     {
-                                        Altitude = _gameWorld.Altitude,
-                                        Dogecoins = _gameWorld.Coins,
-                                        Played = DateTime.Now,
-                                        Player = _player,
-                                        Mugshot = filePath
-                                    };
 
-                                    _player.Dogecoins += _gameWorld.Coins;
+                                        //mugshot
+                                        var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body);
+                                        var filePath = SaveHeadshot(headBitmap);
 
-                                    //var db = new JumpFocusContext();
-                                    //db.Histories.Add(history);
-                                    //db.Players.AddOrUpdate(_player);
-                                    //db.SaveChanges();
+                                        var history = new History
+                                        {
+                                            Altitude = _gameWorld.Altitude,
+                                            Dogecoins = _gameWorld.Coins,
+                                            Played = DateTime.Now,
+                                            Player = _player,
+                                            Mugshot = filePath
+                                        };
+
+                                        _player.Dogecoins += _gameWorld.Coins;
+
+                                        var db = new JumpFocusContext();
+                                        db.Histories.Add(history);
+                                        db.Players.AddOrUpdate(_player);
+                                        db.SaveChanges();
+
+                                        _conductor.ActivateItem(new LeaderBoardViewModel(_conductor));
+                                    }
                                 }
                             }
                             else
@@ -241,17 +253,6 @@ namespace JumpFocus.ViewModels
                                         }
                                         distance = _bodies[index].Joints[JointType.SpineMid].Position.Z;
                                     }
-                                }
-                            }
-
-                            if (null != _avatar)
-                            {
-                                _avatar.Draw(dc);
-                                _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
-
-                                if (_gameWorld.HasLanded && _gameWorld.Landed.AddSeconds(2) < DateTime.Now)
-                                {
-                                    _conductor.ActivateItem(new JumpViewModel(_conductor, _sensor, _player));
                                 }
                             }
                         }
