@@ -2,15 +2,12 @@
 using FarseerPhysics.Dynamics;
 using FarseerPhysics.Dynamics.Joints;
 using FarseerPhysics.Factories;
-using JumpFocus.Models;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MK = Microsoft.Kinect;
@@ -116,7 +113,7 @@ namespace JumpFocus
             {
                 return;
             }
-
+            
             _torsoGeo = new RectangleGeometry(new Rect
             {
                 //The center is the center in Geometry, not the top left
@@ -230,6 +227,12 @@ namespace JumpFocus
             {
                 _jLeftArm.MotorSpeed = 0;
             }
+        }
+
+        public void Land()
+        {
+            _jLeftArm.MotorEnabled = false;
+            _jRightArm.MotorEnabled = false;
         }
 
         public bool Jump(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)

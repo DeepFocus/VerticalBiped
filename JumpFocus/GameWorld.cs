@@ -7,13 +7,8 @@ using FarseerPhysics.Factories;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -42,7 +37,7 @@ namespace JumpFocus
         private readonly Brush _floorBrush = new SolidColorBrush(Color.FromRgb(236, 124, 95));
         private readonly Brush _skyBrush = new SolidColorBrush(Color.FromRgb(236, 241, 237));
         private readonly Brush _textBrush = new SolidColorBrush(Color.FromRgb(59, 66, 78));
-        private readonly Typeface _typeface = new Typeface("Verdana");
+        private readonly Typeface _typeface = new Typeface(new FontFamily(new Uri("pack://application:,,,/"), "./Resources/Fonts/#OCR-A"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
         private readonly Uri _cloudUri = new Uri("pack://application:,,,/Resources/Images/cloud.png");
         private readonly Uri _coinUri = new Uri("pack://application:,,,/Resources/Images/coin.png");
         private readonly Uri _catUri = new Uri("pack://application:,,,/Resources/Images/cat.png");
@@ -72,6 +67,7 @@ namespace JumpFocus
 
         public int Altitude { get; private set; }
         public bool HasLanded { get; private set; }
+        public DateTime Landed { get; private set; }
 
         public string Message { get; set; }
 
@@ -134,8 +130,9 @@ namespace JumpFocus
             _anchor.Restitution = 1f;
 
             //Floor needs to be seperated because it triggers the end of the game
-            _floor = BodyFactory.CreateEdge(_world, new Vector2(-_worldWidth, _worldHeight), new Vector2(2 * _worldWidth, _worldHeight));
-            _floor.Restitution = 1f;
+            _floor = BodyFactory.CreateEdge(_world, new Vector2(-_worldWidth, _worldHeight - 0.1f), new Vector2(2 * _worldWidth, _worldHeight - 0.1f));
+            _floor.Restitution = 0f;
+            _floor.Friction = 1f;
             _floor.OnCollision += _floor_OnCollision;
 
             //DEBUG Ball stuff
@@ -250,41 +247,14 @@ namespace JumpFocus
                 }
             }
 
-            //Score display
-            var score = string.Format("Score: {0}", Coins);
-            var fText = new FormattedText(score, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _textBrush);
-            dc.DrawText(fText, _camera.Location);
-
-            //Altitude
-            var alt = ConvertUnits.ToSimUnits(_camera.Location.Y);
-            alt = _worldHeight - alt - _cameraHeight;
-            if (alt > Altitude)
-            {
-                Altitude = (int)alt;
-            }
-            var altitude = string.Format("Max Altitude: {0}", Altitude);
-            fText = new FormattedText(altitude, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _textBrush);
-            dc.DrawText(fText, Point.Add(_camera.Location, new Vector(0, 150)));
-
-            //Message is needed
-            if (!string.IsNullOrWhiteSpace(Message))
-            {
-                var messageText = new FormattedText(Message, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 250, _textBrush);
-                messageText.TextAlignment = TextAlignment.Center;
-                var location = new Point
-                {
-                    X = _camera.X + (_camera.Width / 2),
-                    Y = _camera.Y + (_camera.Height / 4)
-                };
-                dc.DrawText(messageText, location);
-            }
-
             //Draw balls
             foreach (var ball in _ballBodies)
             {
-                var point = new Point();
-                point.Y = ConvertUnits.ToDisplayUnits(ball.Position.Y);
-                point.X = ConvertUnits.ToDisplayUnits(ball.Position.X);
+                var point = new Point
+                {
+                    Y = ConvertUnits.ToDisplayUnits(ball.Position.Y),
+                    X = ConvertUnits.ToDisplayUnits(ball.Position.X)
+                };
                 var ballGeo = new EllipseGeometry(point, ConvertUnits.ToDisplayUnits(0.5f), ConvertUnits.ToDisplayUnits(0.5f));
 
                 if (bg.FillContains(ballGeo))
@@ -323,8 +293,8 @@ namespace JumpFocus
             {
                 var imgContainer = new Rect
                 {
-                    X = ConvertUnits.ToDisplayUnits(cloud.Position.X),
-                    Y = ConvertUnits.ToDisplayUnits(cloud.Position.Y),
+                    X = ConvertUnits.ToDisplayUnits(cloud.Position.X) - _cloudImg.Width / 2,
+                    Y = ConvertUnits.ToDisplayUnits(cloud.Position.Y) - _cloudImg.Height / 2,
                     Width = _cloudImg.PixelWidth,
                     Height = _cloudImg.PixelHeight
                 };
@@ -338,17 +308,17 @@ namespace JumpFocus
             //Draw cats
             foreach (var cat in _cats)
             {
-                //Flip the picture
                 var imgContainer = new Rect
                 {
-                    X = ConvertUnits.ToDisplayUnits(cat.Position.X),
-                    Y = ConvertUnits.ToDisplayUnits(cat.Position.Y),
+                    X = ConvertUnits.ToDisplayUnits(cat.Position.X) - _catImg.Width / 2,
+                    Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) - _catImg.Height / 2,
                     Width = _catImg.PixelWidth,
                     Height = _catImg.PixelHeight
                 };
 
                 if (bg.FillContains(new RectangleGeometry(imgContainer)))
                 {
+                    //Flip the picture if needed
                     if (cat.LinearVelocity.X > 0)
                     {
                         dc.DrawImage(_catReversedImg, imgContainer);
@@ -356,8 +326,8 @@ namespace JumpFocus
                         {
                             var fireContainer = new Rect
                             {
-                                X = ConvertUnits.ToDisplayUnits(cat.Position.X) + _catImg.Width,
-                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height - _fireImg.Height,
+                                X = ConvertUnits.ToDisplayUnits(cat.Position.X) + _catImg.Width / 2,
+                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height / 2 - _fireImg.Height,
                                 Width = _fireImg.PixelWidth,
                                 Height = _fireImg.PixelHeight
                             };
@@ -374,8 +344,8 @@ namespace JumpFocus
                         {
                             var fireContainer = new Rect
                             {
-                                X = ConvertUnits.ToDisplayUnits(cat.Position.X) - _catImg.Width,
-                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height - _fireImg.Height,
+                                X = ConvertUnits.ToDisplayUnits(cat.Position.X) - 1.25 * _catImg.Width,
+                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height / 2 - _fireImg.Height,
                                 Width = _fireImg.PixelWidth,
                                 Height = _fireImg.PixelHeight
                             };
@@ -411,6 +381,35 @@ namespace JumpFocus
                     dc.DrawImage(_diamondImg, diamond);
                 }
             }
+
+            //Score display
+            var score = string.Format("Score: {0}", Coins);
+            var fText = new FormattedText(score, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _textBrush);
+            dc.DrawText(fText, _camera.Location);
+
+            //Altitude
+            var alt = ConvertUnits.ToSimUnits(_camera.Location.Y);
+            alt = _worldHeight - alt - _cameraHeight;
+            if (alt > Altitude)
+            {
+                Altitude = (int)alt;
+            }
+            var altitude = string.Format("Max Altitude: {0}", Altitude);
+            fText = new FormattedText(altitude, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 150, _textBrush);
+            dc.DrawText(fText, Point.Add(_camera.Location, new Vector(0, 150)));
+
+            //Message is needed
+            if (!string.IsNullOrWhiteSpace(Message))
+            {
+                var messageText = new FormattedText(Message, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, _typeface, 250, _textBrush);
+                messageText.TextAlignment = TextAlignment.Center;
+                var location = new Point
+                {
+                    X = _camera.X + (_camera.Width / 2),
+                    Y = _camera.Y + (_camera.Height / 4)
+                };
+                dc.DrawText(messageText, location);
+            }
         }
 
         bool coin_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
@@ -425,7 +424,7 @@ namespace JumpFocus
         }
 
         /// <summary>
-        /// Slows down the body going up but doesn't go further
+        /// Slows down the avatar while going up
         /// </summary>
         bool cloud_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
@@ -437,7 +436,7 @@ namespace JumpFocus
                 return false;
             }
 
-            if (body.LinearVelocity.Y > 0)
+            if (body.LinearVelocity.Y < 0f)
             {
                 fixtureB.Body.ApplyLinearImpulse(new Vector2(0, 100f));
             }
@@ -451,6 +450,7 @@ namespace JumpFocus
             {
                 //end of game
                 HasLanded = true;
+                Landed = DateTime.Now;
                 Message = string.Format("Your score is {0}", Coins + Altitude);
             }
 

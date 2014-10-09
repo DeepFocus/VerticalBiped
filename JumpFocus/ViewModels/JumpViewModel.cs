@@ -104,7 +104,7 @@ namespace JumpFocus.ViewModels
                 //Create the world
                 _gameWorld = new GameWorld(_world, SystemParameters.WorkArea);
                 _gameWorld.GenerateWorld();
-                
+
                 //Delete the player
                 _avatar = null;
                 _currentUserId = 0;
@@ -138,12 +138,9 @@ namespace JumpFocus.ViewModels
                             //Set next step depending on the kinect FPS rate
                             stepSeconds = (float)_stopwatch.Elapsed.TotalSeconds;
 
-                            //Stop the game once the player has landed
-                            if (!_gameWorld.HasLanded)
-                            {
-                                _world.Step(stepSeconds);
-                                _gameWorld.Step();
-                            }
+                            _world.Step(stepSeconds);
+                            _gameWorld.Step();
+
                             _stopwatch.Reset();
                         }
                         if (!_stopwatch.IsRunning)
@@ -161,7 +158,10 @@ namespace JumpFocus.ViewModels
                             {
                                 var body = _bodies.First(b => b.TrackingId == _currentUserId);
 
-                                _avatar.Move(body.Joints, stepSeconds);
+                                if (!_gameWorld.HasLanded)
+                                {
+                                    _avatar.Move(body.Joints, stepSeconds);
+                                }
 
                                 //player ready
                                 if (!_avatar.HasJumped && !_avatar.IsReadyToJump)
@@ -196,6 +196,8 @@ namespace JumpFocus.ViewModels
 
                                 if (_gameWorld.HasLanded)
                                 {
+                                    _avatar.Land();
+
                                     //mugshot
                                     var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body);
                                     var filePath = SaveHeadshot(headBitmap);
@@ -247,9 +249,8 @@ namespace JumpFocus.ViewModels
                                 _avatar.Draw(dc);
                                 _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
 
-                                if (_gameWorld.HasLanded)
+                                if (_gameWorld.HasLanded && _gameWorld.Landed.AddSeconds(2) < DateTime.Now)
                                 {
-                                    System.Threading.Thread.Sleep(1000);
                                     _conductor.ActivateItem(new JumpViewModel(_conductor, _sensor, _player));
                                 }
                             }
