@@ -175,23 +175,23 @@ namespace JumpFocus.ViewModels
             
             await InitKinectAsync();
             BottomGuide = "Loading...";
-            await Task.Factory.StartNew(t => 
-                {
-                    try
-                    {
-                        var players = _playersProxy.GetAllPlayers().Result;
-                        _names = new Choices();
-                        foreach (var p in players)
-                        {
-                            _names.Add(new SemanticResultValue(p.Name, p.Id));
-                            _names.Add(new SemanticResultValue(p.TwitterHandle, p.Id));
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        this.TryClose();    
-                    }
-                }, TaskCreationOptions.LongRunning);
+            //await Task.Factory.StartNew(t => 
+            //    {
+            //        try
+            //        {
+            //            var players = _playersProxy.GetAllPlayers().Result;
+            //            _names = new Choices();
+            //            foreach (var p in players)
+            //            {
+            //                _names.Add(new SemanticResultValue(p.Name, p.Id));
+            //                _names.Add(new SemanticResultValue(p.TwitterHandle, p.Id));
+            //            }
+            //        }
+            //        catch (Exception)
+            //        {
+            //            this.TryClose();    
+            //        }
+            //    }, TaskCreationOptions.LongRunning);
 
             InitNames();
         }
@@ -199,10 +199,12 @@ namespace JumpFocus.ViewModels
         private void InitNames()
         {
             //Initialize the speech recognition engine with user names
-            if (_textBox != null)
-            {
-                _textBox.Focus();
-            }
+            //if (_textBox != null)
+            //{
+            //    _textBox.Focus();
+            //}
+            //Generates a "The calling thread must be STA, because many UI components require this." exception when coming back to this screen
+
             _player = null;
             UpdatePlayer();
             InputTextBoxVisible = true;
@@ -210,7 +212,7 @@ namespace JumpFocus.ViewModels
             BottomGuide = string.Empty;
             Guide = "What's your name?";
             BgVideo = "Resources\\Videos\\Video2.mp4";
-            Task.Run( () => SpeechInitialization(_names, NameRecognized));
+            //Task.Run( () => SpeechInitialization(_names, NameRecognized));
         }
 
         readonly TaskCompletionSource<bool> _resultCompletionSource = new TaskCompletionSource<bool>();
@@ -405,6 +407,8 @@ namespace JumpFocus.ViewModels
             {
                 _sensor.Close();
             }
+
+            base.OnDeactivate(close);
         }
         
         private ICommand _escapeCommand;

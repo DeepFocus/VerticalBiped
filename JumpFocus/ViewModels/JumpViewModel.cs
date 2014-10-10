@@ -5,14 +5,10 @@ using JumpFocus.Models;
 using Microsoft.Kinect;
 using Microsoft.Xna.Framework;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -34,6 +30,8 @@ namespace JumpFocus.ViewModels
         private ushort[] _depthFrameData;
         private byte[] _bodyIndexFrameData;
         private ColorSpacePoint[] _colorPoints;
+        //Screenshot result
+        private string _filePath = string.Empty;
 
         private DrawingImage _video;
         private DrawingGroup _drawingGroup;
@@ -157,7 +155,7 @@ namespace JumpFocus.ViewModels
                             if (_bodies.Any(b => b.TrackingId == _currentUserId && b.IsTracked))
                             {
                                 var body = _bodies.First(b => b.TrackingId == _currentUserId);
-
+                                
                                 if (!_gameWorld.HasLanded)
                                 {
                                     _avatar.Move(body.Joints, stepSeconds);
@@ -203,31 +201,46 @@ namespace JumpFocus.ViewModels
                                 {
                                     _avatar.Draw(dc);
                                     _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
-
-                                    if (_gameWorld.HasLanded && _gameWorld.Landed.AddSeconds(5) < DateTime.Now)
+                                    if (_gameWorld.HasLanded)
                                     {
-
-                                        //mugshot
-                                        var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body);
-                                        var filePath = SaveHeadshot(headBitmap);
-
-                                        var history = new History
+                                        if (string.IsNullOrWhiteSpace(_filePath))
                                         {
-                                            Altitude = _gameWorld.Altitude,
-                                            Dogecoins = _gameWorld.Coins,
-                                            Played = DateTime.Now,
-                                            Player = _player,
-                                            Mugshot = filePath
-                                        };
+                                            //get body index
+                                            for (byte index = 0; index < _bodies.Length; index++)
+                                            {
+                                                if (_bodies[index].TrackingId == _currentUserId)
+                                                {
+                                                    //mugshot
+                                                    //var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body);
+                                                    //var filePath = SaveBitmap(headBitmap);
+                                                    var bodyBitmap = RenderBodyshot(colorFrame, depthFrame,
+                                                        bodyIndexFrame, index);
+                                                    _filePath = SaveBitmap(bodyBitmap);
+                                                    break;
+                                                }
+                                            }
+                                        }
 
-                                        _player.Dogecoins += _gameWorld.Coins;
+                                        if (_gameWorld.Landed.AddSeconds(5) < DateTime.Now)
+                                        {
+                                            var history = new History
+                                            {
+                                                Altitude = _gameWorld.Altitude,
+                                                Dogecoins = _gameWorld.Coins,
+                                                Played = DateTime.Now,
+                                                Player = _player,
+                                                Mugshot = _filePath
+                                            };
 
-                                        var db = new JumpFocusContext();
-                                        db.Histories.Add(history);
-                                        db.Players.AddOrUpdate(_player);
-                                        db.SaveChanges();
+                                            _player.Dogecoins += _gameWorld.Coins;
 
-                                        _conductor.ActivateItem(new LeaderBoardViewModel(_conductor));
+                                            var db = new JumpFocusContext();
+                                            db.Histories.Add(history);
+                                            db.Players.AddOrUpdate(_player);
+                                            db.SaveChanges();
+
+                                            _conductor.ActivateItem(new LeaderBoardViewModel(_conductor, _sensor));
+                                        }
                                     }
                                 }
                             }
@@ -244,10 +257,7 @@ namespace JumpFocus.ViewModels
                                         _currentUserId = _bodies[index].TrackingId;
                                         if (null == _avatar)
                                         {
-                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 4f))
-                                            {
-                                                BodyIndex = index
-                                            };
+                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 4f));
 
                                             _world.Step(0);
                                         }
@@ -261,7 +271,93 @@ namespace JumpFocus.ViewModels
             }
         }
 
-        private WriteableBitmap RenderHeadshot(ColorFrame colorFrame, DepthFrame depthFrame, BodyIndexFrame bodyIndexFrame, Body body)
+        private WriteableBitmap RenderBodyshot(ColorFrame colorFrame, DepthFrame depthFrame, BodyIndexFrame bodyIndexFrame, byte bodyIndex)
+        {
+            if (colorFrame.RawColorImageFormat == ColorImageFormat.Bgra)
+            {
+                colorFrame.CopyRawFrameDataToArray(_colorPixels);
+            }
+            else
+            {
+                colorFrame.CopyConvertedFrameDataToArray(_colorPixels, ColorImageFormat.Bgra);
+            }
+
+            var colorFrameDescription = colorFrame.FrameDescription;
+            var colorWidth = colorFrameDescription.Width;
+            var colorHeight = colorFrameDescription.Height;
+
+            var depthFrameDescription = depthFrame.FrameDescription;
+            var depthWidth = depthFrameDescription.Width;
+            var depthHeight = depthFrameDescription.Height;
+
+            if ((depthWidth * depthHeight) == _depthFrameData.Length)
+            {
+                depthFrame.CopyFrameDataToArray(_depthFrameData);
+            }
+            _sensor.CoordinateMapper.MapDepthFrameToColorSpace(_depthFrameData, _colorPoints);
+
+
+            if (bodyIndexFrame != null)
+            {
+                var bodyIndexFrameDescription = bodyIndexFrame.FrameDescription;
+                var bodyIndexWidth = bodyIndexFrameDescription.Width;
+                var bodyIndexHeight = bodyIndexFrameDescription.Height;
+
+                if ((bodyIndexWidth * bodyIndexHeight) == _bodyIndexFrameData.Length)
+                {
+                    bodyIndexFrame.CopyFrameDataToArray(_bodyIndexFrameData);
+                }
+            }
+
+            var displayPixels = new byte[depthWidth * depthHeight * _bytesPerPixel];
+            // loop over each row and column of the depth
+            for (int y = 0; y < depthHeight; ++y)
+            {
+                for (int x = 0; x < depthWidth; ++x)
+                {
+                    // calculate index into depth array
+                    int depthIndex = (y * depthWidth) + x;
+
+                    byte player = _bodyIndexFrameData[depthIndex];
+                    // retrieve the depth to color mapping for the current depth pixel
+                    ColorSpacePoint colorPoint = _colorPoints[depthIndex];
+
+                    // make sure the depth pixel maps to a valid point in color space
+                    int colorX = (int)Math.Floor(colorPoint.X + 0.5);
+                    int colorY = (int)Math.Floor(colorPoint.Y + 0.5);
+                    if ((colorX >= 0) && (colorX < colorWidth) && (colorY >= 0) && (colorY < colorHeight))
+                    {
+                        // set source for copy to the color pixel
+                        int displayIndex = depthIndex * _bytesPerPixel;
+                        // if we're tracking a player for the current pixel, sets its color and alpha to full
+                        if (player == bodyIndex)
+                        {
+                            // calculate index into color array
+                            int colorIndex = ((colorY * colorWidth) + colorX) * _bytesPerPixel;
+                            displayPixels[displayIndex++] = _colorPixels[colorIndex++];//blue
+                            displayPixels[displayIndex++] = _colorPixels[colorIndex++];//green
+                            displayPixels[displayIndex++] = _colorPixels[colorIndex];//red
+                            displayPixels[displayIndex] = 0xff;//alpha
+                        }
+                        else
+                        {
+                            displayPixels[displayIndex + 3] = 0x00;//alpha
+                        }
+                    }
+                }
+            }
+
+            var colorBitmap = new WriteableBitmap(depthFrameDescription.Width, depthFrameDescription.Height, 96.0, 96.0,
+                PixelFormats.Bgra32, null);
+            colorBitmap.WritePixels(
+                new Int32Rect(0, 0, depthFrameDescription.Width, depthFrameDescription.Height),
+                displayPixels,
+                colorBitmap.PixelWidth * _bytesPerPixel, 0);
+
+            return colorBitmap;
+        }
+
+        private WriteableBitmap RenderHeadshot(ColorFrame colorFrame, DepthFrame depthFrame, BodyIndexFrame bodyIndexFrame, Body body, byte bodyIndex)
         {
             var mapper = _sensor.CoordinateMapper;
             var head = mapper.MapCameraPointToDepthSpace(body.Joints[JointType.Head].Position);
@@ -324,7 +420,7 @@ namespace JumpFocus.ViewModels
                         // set source for copy to the color pixel
                         int displayIndex = depthIndex * _bytesPerPixel;
                         // if we're tracking a player for the current pixel, sets its color and alpha to full
-                        if (player == _avatar.BodyIndex)
+                        if (player == bodyIndex)
                         {
                             // calculate index into color array
                             int colorIndex = ((colorY * colorWidth) + colorX) * _bytesPerPixel;
@@ -366,7 +462,7 @@ namespace JumpFocus.ViewModels
             return headBitmap;
         }
 
-        private string SaveHeadshot(WriteableBitmap input)
+        private string SaveBitmap(WriteableBitmap input)
         {
             if (input != null)
             {
@@ -407,6 +503,8 @@ namespace JumpFocus.ViewModels
             }
 
             _sensor.Close();
+
+            base.OnDeactivate(close);
         }
     }
 }

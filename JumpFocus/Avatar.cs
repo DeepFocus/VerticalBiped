@@ -5,7 +5,6 @@ using FarseerPhysics.Factories;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
@@ -43,7 +42,6 @@ namespace JumpFocus
         public bool HasJumped { get; private set; }
         public bool IsReadyToJump { get; set; }
         public float VerticalSpeed { get; private set; }
-        public byte BodyIndex { get; set; }
 
         public Avatar(World world, Vector2 position)
         {

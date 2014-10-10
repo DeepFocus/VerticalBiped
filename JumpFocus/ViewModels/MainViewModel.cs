@@ -6,10 +6,17 @@ namespace JumpFocus.ViewModels
 {
     class MainViewModel : Conductor<IScreen>
     {
+        public WelcomeViewModel WelcomeViewModel { get; set; }
+
         public MainViewModel()
         {
             var sensor = KinectSensor.GetDefault();
-            ActivateItem(new WelcomeViewModel(this, sensor));
+
+            WelcomeViewModel = new WelcomeViewModel(this, sensor);
+
+            //ActivateItem(new WelcomeViewModel(this, sensor));
+            ActivateItem(WelcomeViewModel);
+            //ActivateItem(new LeaderBoardViewModel(this, sensor));
             DisplayName = ConfigurationManager.AppSettings["appName"];
         }
 
