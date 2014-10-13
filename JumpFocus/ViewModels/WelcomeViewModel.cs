@@ -1,9 +1,6 @@
 ﻿using System.Configuration;
-using System.Data.Entity;
-using System.Data.Odbc;
 using System.IO;
 using System.Runtime.Caching;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -107,6 +104,17 @@ namespace JumpFocus.ViewModels
             }
         }
 
+        private bool _isLoading;
+        public bool IsLoading
+        {
+            get { return _isLoading; }
+            set
+            {
+                _isLoading = value;
+                NotifyOfPropertyChange(() => IsLoading);
+            }
+        }
+
         private string _inputTextValue;
         public string InputTextValue
         {
@@ -116,6 +124,17 @@ namespace JumpFocus.ViewModels
                 _inputTextValue = value;
                 OnInput();
                 NotifyOfPropertyChange(() => InputTextValue);
+            }
+        }
+
+        private string _foundTextValue;
+        public string FoundTextValue
+        {
+            get { return _foundTextValue; }
+            set
+            {
+                _foundTextValue = value;
+                NotifyOfPropertyChange(() => FoundTextValue);
             }
         }
 
@@ -165,6 +184,10 @@ namespace JumpFocus.ViewModels
                    };
                 }
                 _textBox = frameworkElement.FindName("InputTextValue") as TextBox;
+                if (_textBox != null)
+                {
+                    _textBox.Focus();
+                }
             }
             
             BottomGuide = "Waiting for Kinect...";
@@ -199,10 +222,6 @@ namespace JumpFocus.ViewModels
         private void InitNames()
         {
             //Initialize the speech recognition engine with user names
-            //if (_textBox != null)
-            //{
-            //    _textBox.Focus();
-            //}
             //Generates a "The calling thread must be STA, because many UI components require this." exception when coming back to this screen
 
             _player = null;
@@ -268,14 +287,18 @@ namespace JumpFocus.ViewModels
 
         #region Input Text Handling
         private bool _isTyping;
+
         private async void OnInput()
         {
-            if (!_isTyping)
+            if (!_isTyping && !string.IsNullOrWhiteSpace(_textBox.Text))
             {
                 _isTyping = true;
                 _aTimer.Start();
+                IsLoading = true;
                 _player = await PlayerSearch(InputTextValue);
                 UpdatePlayer();
+                IsLoading = false;
+                _isTyping = false;
             }
         }
 
@@ -287,9 +310,11 @@ namespace JumpFocus.ViewModels
                 PlayerName = string.Empty;
                 TwitterPhoto = null;
                 InputTextValue = string.Empty;
+                FoundTextValue = string.Empty;
+                IsLoading = false;
                 return;
             }
-            TwitterHandle = '@' + _player.TwitterHandle;
+            FoundTextValue = _player.TwitterHandle.Substring(_textBox.Text.Length);
             PlayerName = _player.Name;
             TwitterPhoto = new BitmapImage(new Uri(_player.TwitterPhoto));
             RecognizeConfirmation();
@@ -420,6 +445,7 @@ namespace JumpFocus.ViewModels
                     ?? (_escapeCommand = new ActionCommand(() =>
                     {
                         InputTextValue = string.Empty;
+                        IsLoading = false;
                         if (_isConfirming)
                         {
                             _isConfirming = false;
