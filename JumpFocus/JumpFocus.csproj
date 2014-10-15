@@ -100,6 +100,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Authenticators\TwitterAuthenticator.cs" />
     <Compile Include="Avatar.cs" />
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="Coin.cs" />
@@ -118,6 +119,7 @@
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\API\TwitterFollowers.cs" />
     <Compile Include="Models\API\TwitterFollowersIds.cs" />
+    <Compile Include="Models\API\TwitterStatusesUpdateResponse.cs" />
     <Compile Include="Models\API\TwitterUser.cs" />
     <Compile Include="Models\History.cs" />
     <Compile Include="Models\Player.cs" />

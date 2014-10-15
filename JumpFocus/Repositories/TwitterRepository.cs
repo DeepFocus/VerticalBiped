@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JumpFocus.Extensions;
 using JumpFocus.Models.API;
 using RestSharp;
+using JumpFocus.Authenticators;
 
 namespace JumpFocus.Repositories
 {
@@ -13,18 +14,24 @@ namespace JumpFocus.Repositories
     {
         private readonly string _apiKey;
         private readonly string _apiSecret;
+        private readonly string _accessToken;
+        private readonly string _accessTokenSecret;
         private readonly string _baseUrl;
 
-        public TwitterRepository(string apiKey, string apiSecret, string baseUrl = "https://api.twitter.com")
+        public TwitterRepository(string apiKey, string apiSecret, string accessToken = "", string accessTokenSecret = "", string baseUrl = "https://api.twitter.com")
         {
             _apiKey = apiKey;
             _apiSecret = apiSecret;
+            _accessToken = accessToken;
+            _accessTokenSecret = accessTokenSecret;
             _baseUrl = baseUrl;
         }
 
         /// <summary>
         /// Returns the followers id
         /// </summary>
+        /// <param name="screenName"></param>
+        /// <param name="cursor"></param>
         /// <param name="count">Max number of tweets to return (default to 100, max 200)</param>
         /// <returns></returns>
         public async Task<TwitterFollowersIds> GetFollowersIds(string screenName, long cursor = -1, int count = 5000)
@@ -34,8 +41,7 @@ namespace JumpFocus.Repositories
 
             if (await Authenticate(client))
             {
-                var request = new RestRequest("1.1/followers/ids.json");
-                request.Method = Method.GET;
+                var request = new RestRequest("1.1/followers/ids.json", Method.GET);
                 request.AddParameter("screen_name", screenName);
                 request.AddParameter("cursor", cursor);
                 request.AddParameter("count", count);
@@ -54,16 +60,15 @@ namespace JumpFocus.Repositories
         /// <summary>
         /// Returns a list of users
         /// </summary>
-        /// <param name="count">Max number of tweets to return (default to 100, max 200)</param>
+        /// <param name="userIds"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<TwitterUser>> PostUsersLookup(long[] userIds)
+        public async Task<IEnumerable<TwitterUser>> PostUsersLookup(IEnumerable<long> userIds)
         {
             var client = new RestClient(_baseUrl);
 
             if (await Authenticate(client))
             {
-                var request = new RestRequest("1.1/users/lookup.json");
-                request.Method = Method.POST;
+                var request = new RestRequest("1.1/users/lookup.json", Method.POST);
                 request.AddParameter("user_id", string.Join(",", userIds));
                 request.AddParameter("include_entities", false);
 
@@ -73,6 +78,31 @@ namespace JumpFocus.Repositories
                 {
                     return response.Data;
                 }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Post a message on Twitter
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public async Task<TwitterStatusesUpdateResponse> PostStatusesUpdate(string message)
+        {
+            var client = new RestClient(_baseUrl)
+            {
+                Authenticator = new TwitterAuthenticator(_apiKey, _apiSecret, _accessToken, _accessTokenSecret)
+            };
+
+            var request = new RestRequest("1.1/statuses/update.json", Method.POST);
+            request.AddParameter("status", message, ParameterType.QueryString);
+
+            var response = await client.ExecuteTaskAsync<TwitterStatusesUpdateResponse>(request);
+
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return response.Data;
             }
 
             return null;
@@ -90,7 +120,6 @@ namespace JumpFocus.Repositories
             client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(base64Token, "Basic");
 
             var request = new RestRequest("/oauth2/token", Method.POST);
-            request.Method = Method.POST;
             request.AddParameter("grant_type", "client_credentials");
 
             var response = await client.ExecuteTaskAsync<TwitterAuthenticationResponse>(request);
