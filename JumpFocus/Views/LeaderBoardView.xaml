@@ -39,7 +39,8 @@
             <ListView.ItemContainerStyle>
                 <Style TargetType="{x:Type ListViewItem}">
                     <Setter Property="Height" Value="64" />
-                    <Setter Property="Background" Value="#FF343E4E" />
+                    <!--<Setter Property="Background" Value="#FF343E4E" />-->
+                    <Setter Property="Background" Value="{Binding BackgroundColor}" />
                     <Setter Property="Foreground" Value="Azure" />
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -59,7 +60,7 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock>
-                                <Run Text="{Binding Rank}" /><Run Text="{Binding RankSuperscript}" FontSize="12" BaselineAlignment="Top" />
+                                    <Run Text="{Binding Rank}" /><Run Text="{Binding RankSuperscript}" FontSize="12" BaselineAlignment="Top" />
                                 </TextBlock>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>

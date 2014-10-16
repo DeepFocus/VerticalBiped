@@ -221,7 +221,7 @@ namespace JumpFocus.ViewModels
                                             }
                                         }
 
-                                        if (_gameWorld.Landed.AddSeconds(5) < DateTime.Now)
+                                        if (_gameWorld.Landed.AddSeconds(2) < DateTime.Now)
                                         {
                                             var history = new History
                                             {

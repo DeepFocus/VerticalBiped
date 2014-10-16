@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using JumpFocus.DAL;
+using JumpFocus.Models;
 using Microsoft.Kinect;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,8 +13,21 @@ namespace JumpFocus.ViewModels
         private readonly IConductor _conductor;
         private readonly KinectSensor _sensor;
 
-        private IEnumerable<LeaderScoreItem> _scores;
-        public IEnumerable<LeaderScoreItem> Scores
+        private History _lastPlayed;
+        public History LastPlayed
+        {
+            get { return _lastPlayed; }
+            private set
+            {
+                _lastPlayed = value;
+                NotifyOfPropertyChange(() => Scores);
+            }
+        }
+
+
+
+        private LeaderScoreItem[] _scores;
+        public LeaderScoreItem[] Scores
         {
             get { return _scores; }
             private set
@@ -32,17 +46,33 @@ namespace JumpFocus.ViewModels
         protected override void OnActivate()
         {
             var dbRepo = new JumpFocusContext();
-            var i = 0;
+            _lastPlayed = dbRepo.Histories.Include("Player").OrderByDescending(h => h.Played).First();
             Scores = dbRepo.Histories.OrderByDescending(h => h.Altitude + h.Dogecoins)
                 .Select(x => new LeaderScoreItem
                 {
+                    Id = x.Player.Id,
                     Name = x.Player.TwitterHandle,
                     Score = x.Altitude + x.Dogecoins
-                }).Take(10).ToList();
-
-            foreach (var s in Scores)
+                }).Take(10).ToArray();
+            //If not in the first 10 ones, remove the last one and add the current user
+            if (Scores.All(s => s.Id != _lastPlayed.Id))
             {
-                s.Rank = ++i;
+                Scores[Scores.Length - 1] = new LeaderScoreItem
+                {
+                    Id = _lastPlayed.Player.Id,
+                    Name = _lastPlayed.Player.TwitterHandle,
+                    Score = _lastPlayed.Altitude + _lastPlayed.Dogecoins,
+                    Rank = dbRepo.Histories.Count(p => p.Altitude + p.Dogecoins > _lastPlayed.Altitude + _lastPlayed.Dogecoins)
+                };
+            }
+            for (int index = 0; index < Scores.Length; index++)
+            {
+                var s = Scores[index];
+                if (s.Id == _lastPlayed.Player.Id)
+                {
+                    s.BackgroundColor = "#EC7C5F";
+                }
+                s.Rank = s.Rank == 0 ? index + 1 : s.Rank;
                 switch (s.Rank)
                 {
                     case 1:
@@ -60,17 +90,8 @@ namespace JumpFocus.ViewModels
                 }
             }
 
-            //var t = new Timer(state => _conductor.ActivateItem(new WelcomeViewModel(_conductor, _sensor)));
             var t = new Timer(state => _conductor.ActivateItem(((MainViewModel)_conductor).WelcomeViewModel));
-            t.Change(10000, Timeout.Infinite);//waits 10sec
+            t.Change(15000, Timeout.Infinite);//waits 10sec
         }
-    }
-
-    class LeaderScoreItem
-    {
-        public int Rank { get; set; }
-        public string RankSuperscript { get; set; }
-        public string Name { get; set; }
-        public int Score { get; set; }
     }
 }
