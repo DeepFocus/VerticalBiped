@@ -9,6 +9,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Caliburn.Micro;
 using JumpFocus.Models;
+using JumpFocus.Models.API;
 using Microsoft.Kinect;
 using Microsoft.Speech.AudioFormat;
 using Microsoft.Speech.Recognition;
@@ -21,13 +22,18 @@ using JumpFocus.Proxies;
 namespace JumpFocus.ViewModels
 {
     class WelcomeViewModel : Screen
-    {  
+    {
         private Player _player;
         private readonly ObjectCache _cache;
-        private readonly string _twitterApiKey = ConfigurationManager.AppSettings["TwitterApiKey"];
-        private readonly string _twitterApiSecret = ConfigurationManager.AppSettings["TwitterApiSecret"];
+        private readonly TwitterConfig _twitterConfig = new TwitterConfig
+        {
+            AccessToken = ConfigurationManager.AppSettings["TwitterAccessToken"],
+            AccessTokenSecret = ConfigurationManager.AppSettings["TwitterAccessTokenSecret"],
+            ConsumerKey = ConfigurationManager.AppSettings["TwitterConsumerKey"],
+            ConsumerSecret = ConfigurationManager.AppSettings["TwitterConsumerSecret"]
+        };
         private readonly string _twitterScreenName = ConfigurationManager.AppSettings["TwitterScreenName"];
-        
+
         private readonly PlayerProxy _playersProxy;
         private Choices _names;
         private TextBox _textBox;
@@ -122,7 +128,6 @@ namespace JumpFocus.ViewModels
             set
             {
                 _inputTextValue = value;
-                OnInput();
                 NotifyOfPropertyChange(() => InputTextValue);
             }
         }
@@ -159,43 +164,34 @@ namespace JumpFocus.ViewModels
             _conductor = conductor;
             _sensor = kinectSensor;
             _cache = new MemoryCache(GetType().FullName);
-            _playersProxy = new PlayerProxy(_cache, _twitterApiKey, _twitterApiSecret, _twitterScreenName);
-            _aTimer.Tick += (sender, args) =>
-            {
-                _isTyping = false;
-                OnInput();
-            };
+            _playersProxy = new PlayerProxy(_cache, _twitterConfig, _twitterScreenName);
         }
 
-        protected async override void OnActivate()
+        protected async override void OnViewLoaded(object view)
         {
-            var frameworkElement = GetView() as FrameworkElement;
+            _aTimer.Tick += OnInput;
+            var frameworkElement = view as FrameworkElement;
             if (frameworkElement != null)
             {
                 var video = frameworkElement.FindName("VideoElement") as MediaElement;
                 if (video != null)
                 {
-                   video.LoadedBehavior = MediaState.Manual;
-                   video.Play();
-                   video.MediaEnded += (sender, args) =>
-                   {
+                    video.LoadedBehavior = MediaState.Manual;
+                    video.Play();
+                    video.MediaEnded += (sender, args) =>
+                    {
                         video.Position = TimeSpan.Zero;
                         video.Play();
-                   };
-                }
-                _textBox = frameworkElement.FindName("InputTextValue") as TextBox;
-                if (_textBox != null)
-                {
-                    _textBox.Focus();
+                    };
                 }
             }
-            
+
             BottomGuide = "Waiting for Kinect...";
             BgVideo = "Resources\\Videos\\Video.mp4";
             TwitterHandle = string.Empty;
             PlayerName = string.Empty;
             TwitterPhoto = null;
-            
+
             await InitKinectAsync();
             BottomGuide = "Loading...";
             //await Task.Factory.StartNew(t => 
@@ -216,7 +212,43 @@ namespace JumpFocus.ViewModels
             //        }
             //    }, TaskCreationOptions.LongRunning);
 
+            await _playersProxy.CacheWarmup();
+            if (null != frameworkElement)
+            {
+                var stack = frameworkElement.FindName("NameStack") as StackPanel;
+                if (null != stack)
+                {
+                    stack.Visibility = Visibility.Visible;
+                }
+                _textBox = frameworkElement.FindName("InputTextValue") as TextBox;
+                if (null != _textBox)
+                {
+                    _textBox.Focus();
+                }
+            }
             InitNames();
+
+            base.OnViewLoaded(view);
+        }
+
+        protected override void OnDeactivate(bool close)
+        {
+            _aTimer.Tick -= OnInput;
+            if (null != _convertStream)
+            {
+                _convertStream.SpeechActive = false;
+            }
+            if (null != _speechEngine)
+            {
+                _speechEngine.SpeechRecognized -= NameRecognized;
+                _speechEngine.RecognizeAsyncStop();
+            }
+            if (null != _sensor)
+            {
+                _sensor.Close();
+            }
+
+            base.OnDeactivate(close);
         }
 
         private void InitNames()
@@ -227,7 +259,7 @@ namespace JumpFocus.ViewModels
             _player = null;
             UpdatePlayer();
             InputTextBoxVisible = true;
-            
+
             BottomGuide = string.Empty;
             Guide = "What's your name?";
             BgVideo = "Resources\\Videos\\Video2.mp4";
@@ -235,11 +267,11 @@ namespace JumpFocus.ViewModels
         }
 
         readonly TaskCompletionSource<bool> _resultCompletionSource = new TaskCompletionSource<bool>();
-        Task<bool> InitKinectAsync()
+        private async Task<bool> InitKinectAsync()
         {
             _sensor.Open();
             _sensor.IsAvailableChanged += Sensor_IsAvailableChanged;
-            return _resultCompletionSource.Task;
+            return await _resultCompletionSource.Task;
         }
 
         private void Sensor_IsAvailableChanged(object sender, IsAvailableChangedEventArgs e)
@@ -272,7 +304,7 @@ namespace JumpFocus.ViewModels
                 _speechEngine.SpeechRecognized += success;
 
                 // let the convertStream know speech is going active
-                
+
 
                 // For long recognition sessions (a few hours or more), it may be beneficial to turn off adaptation of the acoustic model. 
                 // This will prevent recognition accuracy from degrading over time.
@@ -288,9 +320,9 @@ namespace JumpFocus.ViewModels
         #region Input Text Handling
         private bool _isTyping;
 
-        private async void OnInput()
+        private async void OnInput(object sender, EventArgs e)
         {
-            if (!_isTyping && !string.IsNullOrWhiteSpace(_textBox.Text))
+            if (null != _textBox && !string.IsNullOrWhiteSpace(_textBox.Text))
             {
                 _isTyping = true;
                 _aTimer.Start();
@@ -327,13 +359,17 @@ namespace JumpFocus.ViewModels
                 return null;
             }
             Player found = null;
-            await Task.Run(() =>
+            if (null != _playersProxy.Players)
             {
-                var players = _playersProxy.GetAllPlayers().Result;
-                found = players.FirstOrDefault(x => x.Name.StartsWith(query) || x.TwitterHandle.StartsWith(query));
-            });
+                await Task.Run(() =>
+                {
+                    found =
+                        _playersProxy.Players.FirstOrDefault(
+                            x => x.Name.StartsWith(query) || x.TwitterHandle.StartsWith(query));
+                });
+            }
             return found;
-        } 
+        }
         #endregion
 
         /// <summary>
@@ -357,7 +393,7 @@ namespace JumpFocus.ViewModels
                 //{
                 //}
                 var dbRepo = new JumpFocusContext();
-                _player = dbRepo.Players.Single(p => p.Id == (int) e.Result.Semantics.Value);
+                _player = dbRepo.Players.Single(p => p.Id == (int)e.Result.Semantics.Value);
                 UpdatePlayer();
             }
         }
@@ -417,25 +453,6 @@ namespace JumpFocus.ViewModels
             return null;
         }
 
-        protected override void OnDeactivate(bool close)
-        {
-            if (null != _convertStream)
-            {
-                _convertStream.SpeechActive = false;
-            }
-            if (null != _speechEngine)
-            {
-                _speechEngine.SpeechRecognized -= NameRecognized;
-                _speechEngine.RecognizeAsyncStop();
-            }
-            if (null != _sensor)
-            {
-                _sensor.Close();
-            }
-
-            base.OnDeactivate(close);
-        }
-        
         private ICommand _escapeCommand;
         public ICommand EscapeCommand
         {
@@ -493,5 +510,5 @@ namespace JumpFocus.ViewModels
 
         public event EventHandler CanExecuteChanged;
 
-    } 
+    }
 }

@@ -35,7 +35,7 @@
                 </VisualBrush.Visual>
             </VisualBrush>
         </Grid.Background>
-        <StackPanel  Grid.Row="1" Grid.Column="1" Background="#B2000000">
+        <StackPanel  Grid.Row="1" Grid.Column="1" Background="#B2000000" Visibility="Hidden" x:Name="NameStack">
             <StackPanel Width="460" FocusManager.FocusedElement="{Binding ElementName=InputTextValue}">
                 <TextBlock Text="GETTING STARTED" Margin="10, 20, 10, 10"
                            FontSize="26"  TextAlignment="Center" FontFamily="../Resources/Fonts/#OCR-A" Foreground="Lime" Height="50"/>

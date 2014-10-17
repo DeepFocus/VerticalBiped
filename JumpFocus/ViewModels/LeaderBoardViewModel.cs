@@ -55,7 +55,7 @@ namespace JumpFocus.ViewModels
                     Score = x.Altitude + x.Dogecoins
                 }).Take(10).ToArray();
             //If not in the first 10 ones, remove the last one and add the current user
-            if (Scores.All(s => s.Id != _lastPlayed.Id))
+            if (Scores.All(s => s.Id != _lastPlayed.Player.Id))
             {
                 Scores[Scores.Length - 1] = new LeaderScoreItem
                 {

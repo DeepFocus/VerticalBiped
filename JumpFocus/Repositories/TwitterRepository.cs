@@ -12,18 +12,12 @@ namespace JumpFocus.Repositories
 {
     class TwitterRepository
     {
-        private readonly string _apiKey;
-        private readonly string _apiSecret;
-        private readonly string _accessToken;
-        private readonly string _accessTokenSecret;
+        private readonly TwitterConfig _twitterConfig;
         private readonly string _baseUrl;
 
-        public TwitterRepository(string apiKey, string apiSecret, string accessToken = "", string accessTokenSecret = "", string baseUrl = "https://api.twitter.com")
+        public TwitterRepository(TwitterConfig twitterConfig, string baseUrl = "https://api.twitter.com")
         {
-            _apiKey = apiKey;
-            _apiSecret = apiSecret;
-            _accessToken = accessToken;
-            _accessTokenSecret = accessTokenSecret;
+            _twitterConfig = twitterConfig;
             _baseUrl = baseUrl;
         }
 
@@ -84,6 +78,30 @@ namespace JumpFocus.Repositories
         }
 
         /// <summary>
+        /// Returns a user if found, null if not
+        /// </summary>
+        /// <param name="screeName"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<TwitterUser>> GetUsersLookup(string screeName)
+        {
+            var client = new RestClient(_baseUrl)
+            {
+                Authenticator = new TwitterAuthenticator(_twitterConfig)
+            };
+            var request = new RestRequest("1.1/users/lookup.json");
+            request.AddParameter("screen_name", screeName);
+
+            var response = await client.ExecuteTaskAsync<List<TwitterUser>>(request);
+
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return response.Data;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Post a message on Twitter
         /// </summary>
         /// <param name="message"></param>
@@ -92,7 +110,7 @@ namespace JumpFocus.Repositories
         {
             var client = new RestClient(_baseUrl)
             {
-                Authenticator = new TwitterAuthenticator(_apiKey, _apiSecret, _accessToken, _accessTokenSecret)
+                Authenticator = new TwitterAuthenticator(_twitterConfig)
             };
 
             var request = new RestRequest("1.1/statuses/update.json", Method.POST);
@@ -115,7 +133,7 @@ namespace JumpFocus.Repositories
         /// <param name="client">IRestClient to be authorized</param>
         private async Task<bool> Authenticate(IRestClient client)
         {
-            string base64Token = string.Format("{0}:{1}", _apiKey, _apiSecret).ToBase64();
+            string base64Token = string.Format("{0}:{1}", _twitterConfig.ConsumerKey, _twitterConfig.ConsumerSecret).ToBase64();
 
             client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(base64Token, "Basic");
 

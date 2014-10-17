@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace JumpFocus.Models.API
 {
-    class TwitterUser
+    public class TwitterUser
     {
         public long id { get; set; }
         public string id_str { get; set; }

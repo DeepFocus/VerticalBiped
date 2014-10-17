@@ -15,25 +15,33 @@ namespace JumpFocus.Proxies
 {
     public class PlayerProxy
     {
+        public List<Player> Players
+        {
+            get
+            {
+                return _cache.Get(CacheKey) as List<Player>;
+            }
+        }
+
         private const string CacheKey = "PlayerList";
         private readonly ObjectCache _cache;
-        private readonly TwitterRepository  _twitterRepo;
+        private readonly TwitterRepository _twitterRepo;
         private readonly string _twitterScreenName;
 
-        public PlayerProxy(ObjectCache cache, string twitterApiKey, string twitterApiSecret, string twitterScreenName)
+        public PlayerProxy(ObjectCache cache, TwitterConfig twitterConfig, string twitterScreenName)
         {
             _cache = cache;
-            _twitterRepo = new TwitterRepository(twitterApiKey, twitterApiSecret);
+            _twitterRepo = new TwitterRepository(twitterConfig);
             _twitterScreenName = twitterScreenName;
         }
 
-        public async Task<IEnumerable<Player>> GetAllPlayers()
+        public async Task CacheWarmup()
         {
             var result = _cache.Get(CacheKey) as List<Player>;
 
             if (null != result)
             {
-                return result;
+                return;
             }
 
             var ids = await GetAllTwitterIds();
@@ -75,10 +83,17 @@ namespace JumpFocus.Proxies
                 await dbRepo.SaveChangesAsync();
 
             }
-            _cache.Set(CacheKey, result, DateTimeOffset.Now.AddMinutes(15));
+            var cachePolicy = new CacheItemPolicy
+            {
+                AbsoluteExpiration = DateTimeOffset.UtcNow.AddMinutes(15),
+                RemovedCallback = CacheWarmup
+            };
+            _cache.Set(CacheKey, result, cachePolicy);
+        }
 
-            return result;
-            //return new List<Player>();
+        private void CacheWarmup(CacheEntryRemovedArguments arguments)
+        {
+            CacheWarmup();
         }
 
         private async Task<List<long>> GetAllTwitterIds()

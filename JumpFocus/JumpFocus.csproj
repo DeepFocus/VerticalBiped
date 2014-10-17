@@ -117,6 +117,7 @@
       <DependentUpon>201408191908582_Move Mugshot.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Models\API\TwitterConfig.cs" />
     <Compile Include="Models\API\TwitterFollowers.cs" />
     <Compile Include="Models\API\TwitterFollowersIds.cs" />
     <Compile Include="Models\API\TwitterStatusesUpdateResponse.cs" />

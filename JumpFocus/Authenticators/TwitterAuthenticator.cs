@@ -1,4 +1,5 @@
-﻿using RestSharp;
+﻿using JumpFocus.Models.API;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,17 +11,11 @@ namespace JumpFocus.Authenticators
 {
     class TwitterAuthenticator : IAuthenticator
     {
-        private readonly string _accessToken;
-        private readonly string _accessTokenSecret;
-        private readonly string _consumerKey;
-        private readonly string _consumerSecret;
+        private readonly TwitterConfig _twitterConfig;
 
-        public TwitterAuthenticator(string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret)
+        public TwitterAuthenticator(TwitterConfig twitterConfig)
         {
-            _accessToken = accessToken;
-            _accessTokenSecret = accessTokenSecret;
-            _consumerKey = consumerKey;
-            _consumerSecret = consumerSecret;
+            _twitterConfig = twitterConfig;
         }
 
         /// <summary>
@@ -33,11 +28,11 @@ namespace JumpFocus.Authenticators
         {
             var oauthParameters = new Dictionary<string, string>
             {
-                {"oauth_consumer_key", _consumerKey},
+                {"oauth_consumer_key", _twitterConfig.ConsumerKey},
                 {"oauth_nonce", Guid.NewGuid().ToString().Replace("-", string.Empty)},
                 {"oauth_signature_method", "HMAC-SHA1"},
                 {"oauth_timestamp", ((int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds).ToString()},
-                {"oauth_token", _accessToken},
+                {"oauth_token", _twitterConfig.AccessToken},
                 {"oauth_version", "1.0"}
             };
 
@@ -51,8 +46,8 @@ namespace JumpFocus.Authenticators
                 Uri.EscapeDataString(string.Join("&", parameters)));
 
             string signingKey = string.Format("{0}&{1}",
-                Uri.EscapeDataString(_consumerSecret),
-                Uri.EscapeDataString(_accessTokenSecret));
+                Uri.EscapeDataString(_twitterConfig.ConsumerSecret),
+                Uri.EscapeDataString(_twitterConfig.AccessTokenSecret));
 
             var encoding = Encoding.UTF8;
             var hmac = new HMACSHA1(encoding.GetBytes(signingKey));
