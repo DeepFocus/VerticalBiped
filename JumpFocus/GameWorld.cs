@@ -200,6 +200,7 @@ namespace JumpFocus
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
                 var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
                 cat.BodyType = BodyType.Kinematic; // so they don't stop
+                cat.OnCollision += cat_OnCollision;
 
                 float speed = rand.Next(0, 2) == 1 ? rand.Next(1000, 5000) : -rand.Next(1000, 5000);
                 cat.LinearVelocity = new Vector2(speed, 0);
@@ -442,6 +443,18 @@ namespace JumpFocus
             }
 
             return false;
+        }
+        /// <summary>
+        /// Doesn't block the user on the way up
+        /// </summary>
+        /// <param name="fixtureA"></param>
+        /// <param name="fixtureB"></param>
+        /// <param name="contact"></param>
+        /// <returns></returns>
+        bool cat_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
+        {
+            var body = fixtureB.Body;
+            return body.LinearVelocity.Y > 0f;
         }
 
         bool _floor_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)

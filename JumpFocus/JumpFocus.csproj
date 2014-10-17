@@ -199,6 +199,7 @@
     <Resource Include="Resources\Images\diamond.png" />
     <Resource Include="Resources\Images\x.png" />
     <Resource Include="Resources\Images\fire.png" />
+    <Content Include="Lib\Microsoft.Kinect.dll" />
     <Content Include="Resources\Videos\Video.mp4">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -206,7 +207,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Resource Include="icon.ico" />
-    <Content Include="Lib\Microsoft.Kinect.dll" />
     <Content Include="Lib\Microsoft.Speech.dll" />
     <Resource Include="Resources\Images\intro.png" />
     <Resource Include="Resources\Images\cat.png" />

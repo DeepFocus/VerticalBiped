@@ -96,7 +96,8 @@ namespace JumpFocus.ViewModels
                 _bodyIndexFrameData = new byte[depthWidth * depthHeight];
                 _colorPoints = new ColorSpacePoint[depthWidth * depthHeight];
 
-                _world = new FP.Dynamics.World(new Vector2(0, 9.82f));
+                //_world = new FP.Dynamics.World(new Vector2(0, 9.82f));
+                _world = new FP.Dynamics.World(new Vector2(0, 7f));
                 FP.ConvertUnits.SetDisplayUnitToSimUnitRatio(128f);
 
                 //Create the world

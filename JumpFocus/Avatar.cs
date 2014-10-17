@@ -259,7 +259,7 @@ namespace JumpFocus
                             if (VerticalSpeed > 4)
                             {
                                 _torso.BodyType = BodyType.Dynamic;
-                                _torso.ApplyLinearImpulse(new Vector2(0, -1000 * VerticalSpeed));
+                                _torso.ApplyLinearImpulse(new Vector2(0, -700 * VerticalSpeed));
 
                                 if (VerticalSpeed > currentSpeed + 1)
                                 {
