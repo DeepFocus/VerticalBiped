@@ -37,7 +37,7 @@ namespace JumpFocus.ViewModels
         private DrawingGroup _drawingGroup;
 
         private float _readyCounter;
-        private int _countDown = 1;
+        private int _countDown = 4;
 
         //physiiiiiics duddddde
         private FP.Dynamics.World _world;
@@ -168,11 +168,11 @@ namespace JumpFocus.ViewModels
                                     if (body.HandRightState == HandState.Closed)//&& body.HandRightState == HandState.Closed)
                                     {
                                         _readyCounter += stepSeconds;
-                                        _gameWorld.Message = (_countDown - _readyCounter).ToString("f");
+                                        _gameWorld.Message = string.Format("Ready in {0}", Math.Round(_countDown - _readyCounter) + 1);//+1 to not display the 0
                                     }
                                     else
                                     {
-                                        _gameWorld.Message = string.Format("Keep both hands closed");
+                                        _gameWorld.Message = string.Format("Keep both fists closed");
                                         _readyCounter = 0;
                                     }
 
