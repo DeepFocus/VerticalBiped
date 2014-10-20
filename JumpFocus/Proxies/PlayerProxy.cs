@@ -10,6 +10,7 @@ using JumpFocus.DAL;
 using JumpFocus.Models;
 using JumpFocus.Models.API;
 using JumpFocus.Repositories;
+using AutoMapper;
 
 namespace JumpFocus.Proxies
 {
@@ -37,30 +38,25 @@ namespace JumpFocus.Proxies
 
         public async Task<Player> FindPlayer(string screenName)
         {
-            var result = Players.FirstOrDefault(p => p.TwitterHandle.StartsWith(screenName));
+            var result = Players.FirstOrDefault(p => String.Equals(p.TwitterHandle, screenName, StringComparison.CurrentCultureIgnoreCase));
 
             if (null == result)
             {
-                var users = await _twitterRepo.GetUsersLookup(screenName);
-                var dbRepo = new JumpFocusContext();
-                if (null != users)
+                result = Players.Where(p => p.TwitterHandle.ToLower().StartsWith(screenName.ToLower())).OrderBy(p => p.TwitterHandle.Length).FirstOrDefault();
+
+                if (null == result)
                 {
-                    foreach (var user in users)
+                    var users = await _twitterRepo.GetUsersLookup(screenName);
+                    if (null != users)
                     {
-                        var p = new Player
-                        {
-                            TwitterId = user.id,
-                            Name = user.name,
-                            TwitterHandle = user.screen_name,
-                            TwitterPhoto = user.profile_image_url,
-                            Created = DateTime.Now
-                        };
-                        dbRepo.Players.AddOrUpdate(p);
-                        Players.Add(p);
-                        if (null == result)
-                        {
-                            result = p;
-                        }
+                        var dbRepo = new JumpFocusContext();
+                        var players = Mapper.Map<List<Player>>(users);
+                        dbRepo.Players.AddOrUpdate(players.ToArray());
+                        Players.AddRange(players); //update cache
+
+                        result = players.FirstOrDefault();
+
+                        await dbRepo.SaveChangesAsync();
                     }
                 }
             }

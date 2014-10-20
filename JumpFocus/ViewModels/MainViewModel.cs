@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using Caliburn.Micro;
 using Microsoft.Kinect;
+using JumpFocus.Configurations;
 
 namespace JumpFocus.ViewModels
 {
@@ -15,6 +16,12 @@ namespace JumpFocus.ViewModels
 
             ActivateItem(WelcomeViewModel);
             DisplayName = ConfigurationManager.AppSettings["appName"];
+        }
+
+        protected override void OnActivate()
+        {
+            AutoMapperConfiguration.RegisterMappings();
+            base.OnActivate();
         }
 
         public override sealed void ActivateItem(IScreen item)//see http://goo.gl/krdbwl
