@@ -15,7 +15,7 @@ namespace JumpFocus.Proxies
 {
     public class PlayerProxy
     {
-        public List<Player> Players
+        private List<Player> Players
         {
             get
             {
@@ -33,6 +33,39 @@ namespace JumpFocus.Proxies
             _cache = cache;
             _twitterRepo = new TwitterRepository(twitterConfig);
             _twitterScreenName = twitterScreenName;
+        }
+
+        public async Task<Player> FindPlayer(string screenName)
+        {
+            var result = Players.FirstOrDefault(p => p.TwitterHandle.StartsWith(screenName));
+
+            if (null == result)
+            {
+                var users = await _twitterRepo.GetUsersLookup(screenName);
+                var dbRepo = new JumpFocusContext();
+                if (null != users)
+                {
+                    foreach (var user in users)
+                    {
+                        var p = new Player
+                        {
+                            TwitterId = user.id,
+                            Name = user.name,
+                            TwitterHandle = user.screen_name,
+                            TwitterPhoto = user.profile_image_url,
+                            Created = DateTime.Now
+                        };
+                        dbRepo.Players.AddOrUpdate(p);
+                        Players.Add(p);
+                        if (null == result)
+                        {
+                            result = p;
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         public async Task CacheWarmup()

@@ -358,17 +358,8 @@ namespace JumpFocus.ViewModels
             {
                 return null;
             }
-            Player found = null;
-            if (null != _playersProxy.Players)
-            {
-                await Task.Run(() =>
-                {
-                    found =
-                        _playersProxy.Players.FirstOrDefault(
-                            x => x.Name.StartsWith(query) || x.TwitterHandle.StartsWith(query));
-                });
-            }
-            return found;
+
+            return await _playersProxy.FindPlayer(query);
         }
         #endregion
 
