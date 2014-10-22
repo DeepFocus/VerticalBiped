@@ -67,6 +67,8 @@
                 <TextBlock Text="{Binding PlayerName}" FontSize="36" Height="156" Margin="10" Visibility="{Binding NotLoading, Converter={StaticResource BoolToVisConverter}}" TextAlignment="Center" Foreground="Lime" />
             </StackPanel>
         </StackPanel>
+        <TextBlock Text="{Binding BottomGuide}" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" 
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="20" FontWeight="Bold" FontSize="32" FontFamily="../Resources/Fonts/#OCR-A" Foreground="Yellow" />
         <TextBlock Text="Press Enter to choose or ESC to restart." Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" 
                    HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="20" FontWeight="Bold" FontSize="32" FontFamily="../Resources/Fonts/#OCR-A"
                     Visibility="{Binding InputTextBoxVisible, Converter={StaticResource BoolToVisConverter}}"  Foreground="Lime" />

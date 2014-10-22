@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using JumpFocus.Extensions;
@@ -97,7 +97,13 @@ namespace JumpFocus.Repositories
             {
                 return response.Data;
             }
+            return null;
+        }
 
+
+        public async Task<TwitterStatusesUpdateResponse> PostStatusUpdate(string message)
+        {
+            await PostStatusUpdate(message, null);
             return null;
         }
 
@@ -105,16 +111,27 @@ namespace JumpFocus.Repositories
         /// Post a message on Twitter
         /// </summary>
         /// <param name="message"></param>
+        /// <param name="filePath"></param>
         /// <returns></returns>
-        public async Task<TwitterStatusesUpdateResponse> PostStatusesUpdate(string message)
+        public async Task<TwitterStatusesUpdateResponse> PostStatusUpdate(string message, string filePath)
         {
-            var client = new RestClient(_baseUrl)
+            var client = new RestClient("https://upload.twitter.com")
+            {
+                Authenticator = new TwitterAuthenticator(_twitterConfig)
+            };
+            
+            var uploadRequest = new RestRequest("/1.1/media/upload.json", Method.POST);
+            uploadRequest.AddFile("media", ReadToEnd(filePath), Path.GetFileName(filePath), "image/jpg");
+            var uploadResponse = await client.ExecuteTaskAsync<TwitterUploadResponse>(uploadRequest);
+
+            client = new RestClient(_baseUrl)
             {
                 Authenticator = new TwitterAuthenticator(_twitterConfig)
             };
 
             var request = new RestRequest("1.1/statuses/update.json", Method.POST);
             request.AddParameter("status", message, ParameterType.QueryString);
+            request.AddParameter("media_ids", uploadResponse.Data.media_id, ParameterType.QueryString);
 
             var response = await client.ExecuteTaskAsync<TwitterStatusesUpdateResponse>(request);
 
@@ -151,6 +168,51 @@ namespace JumpFocus.Repositories
             }
 
             return false;
+        }
+
+        private byte[] ReadToEnd(string filepath)
+        {
+            var fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
+            long originalPosition = fileStream.Position;
+            fileStream.Position = 0;
+
+            try
+            {
+                byte[] readBuffer = new byte[4096];
+
+                int totalBytesRead = 0;
+                int bytesRead;
+
+                while ((bytesRead = fileStream.Read(readBuffer, totalBytesRead, readBuffer.Length - totalBytesRead)) > 0)
+                {
+                    totalBytesRead += bytesRead;
+
+                    if (totalBytesRead == readBuffer.Length)
+                    {
+                        int nextByte = fileStream.ReadByte();
+                        if (nextByte != -1)
+                        {
+                            byte[] temp = new byte[readBuffer.Length * 2];
+                            Buffer.BlockCopy(readBuffer, 0, temp, 0, readBuffer.Length);
+                            Buffer.SetByte(temp, totalBytesRead, (byte)nextByte);
+                            readBuffer = temp;
+                            totalBytesRead++;
+                        }
+                    }
+                }
+
+                byte[] buffer = readBuffer;
+                if (readBuffer.Length != totalBytesRead)
+                {
+                    buffer = new byte[totalBytesRead];
+                    Buffer.BlockCopy(readBuffer, 0, buffer, 0, totalBytesRead);
+                }
+                return buffer;
+            }
+            finally
+            {
+                fileStream.Position = originalPosition;
+            }
         }
     }
 }

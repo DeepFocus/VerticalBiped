@@ -10,16 +10,16 @@ using System.Windows.Threading;
 using Caliburn.Micro;
 using JumpFocus.Models;
 using JumpFocus.Models.API;
-using Microsoft.Speech.Recognition;
 using System;
 using JumpFocus.Proxies;
+using JumpFocus.Repositories;
 
 namespace JumpFocus.ViewModels
 {
     class WelcomeViewModel : Screen
     {
         private Player _player;
-        private readonly ObjectCache _cache;
+
         private readonly TwitterConfig _twitterConfig = new TwitterConfig
         {
             AccessToken = ConfigurationManager.AppSettings["TwitterAccessToken"],
@@ -30,7 +30,6 @@ namespace JumpFocus.ViewModels
         private readonly string _twitterScreenName = ConfigurationManager.AppSettings["TwitterScreenName"];
 
         private readonly PlayerProxy _playersProxy;
-        private Choices _names;
         private TextBox _textBox;
 
         private readonly DispatcherTimer _aTimer = new DispatcherTimer
@@ -39,6 +38,7 @@ namespace JumpFocus.ViewModels
             IsEnabled = true
         };
 
+        #region Properties
         private string _guide;
         public string Guide
         {
@@ -144,7 +144,7 @@ namespace JumpFocus.ViewModels
 
         public bool NotLoading
         {
-           get { return !IsLoading && !IsError;  }
+            get { return !IsLoading && !IsError; }
         }
 
         private string _inputTextValue;
@@ -178,20 +178,21 @@ namespace JumpFocus.ViewModels
                 _twitterPhoto = value;
                 NotifyOfPropertyChange(() => TwitterPhoto);
             }
-        }
+        } 
+        #endregion
 
         private readonly IConductor _conductor;
 
         public WelcomeViewModel(IConductor conductor)
         {
             _conductor = conductor;
-            _cache = new MemoryCache(GetType().FullName);
-            _playersProxy = new PlayerProxy(_cache, _twitterConfig, _twitterScreenName);
+            ObjectCache cache = new MemoryCache(GetType().FullName);
+            _playersProxy = new PlayerProxy(cache, _twitterConfig, _twitterScreenName);
         }
 
         protected async override void OnViewLoaded(object view)
         {
-            _aTimer.Tick += OnInput;
+
             var frameworkElement = view as FrameworkElement;
             if (frameworkElement != null)
             {
@@ -208,12 +209,8 @@ namespace JumpFocus.ViewModels
                 }
             }
 
-            BottomGuide = "Waiting for Kinect...";
-            BgVideo = "Resources\\Videos\\Video.mp4";
-            TwitterHandle = string.Empty;
-            PlayerName = string.Empty;
-            TwitterPhoto = null;
             BottomGuide = "Loading...";
+            BgVideo = "Resources\\Videos\\Video.mp4";
             
             await _playersProxy.CacheWarmup();
             if (null != frameworkElement)
@@ -229,25 +226,30 @@ namespace JumpFocus.ViewModels
                     _textBox.Focus();
                 }
             }
-            InitNames();
-
+            Reset();
+            _aTimer.Tick += OnInput;
             base.OnViewLoaded(view);
         }
 
         protected override void OnDeactivate(bool close)
         {
             _aTimer.Tick -= OnInput;
+            Reset();
             base.OnDeactivate(close);
         }
 
-        private void InitNames()
+        private void Reset()
         {
-                        //Generates a "The calling thread must be STA, because many UI components require this." exception when coming back to this screen
+           //Generates a "The calling thread must be STA, because many UI components require this." exception when coming back to this screen
 
             _player = null;
             UpdatePlayer();
             InputTextBoxVisible = true;
+            InputTextValue = string.Empty;
             IsError = false;
+            TwitterHandle = string.Empty;
+            PlayerName = string.Empty;
+            TwitterPhoto = null;
             BorderColor = Brushes.WhiteSmoke;
 
             BottomGuide = string.Empty;
@@ -257,11 +259,11 @@ namespace JumpFocus.ViewModels
 
         #region Input Text Handling
         private bool _isTyping;
-        private string previousValue = "";
+        private string _previousValue;
 
         private async void OnInput(object sender, EventArgs e)
         {
-            if (!_isTyping && previousValue != InputTextValue)
+            if (!_isTyping && _previousValue != InputTextValue)
             {
                 _isTyping = true;
                 IsError = false;
@@ -269,7 +271,7 @@ namespace JumpFocus.ViewModels
                 IsLoading = true;
                 TwitterPhoto = null;
                 TwitterHandle = string.Empty;
-                previousValue = InputTextValue;
+                _previousValue = InputTextValue;
                 _player = await PlayerSearch(InputTextValue);
                 UpdatePlayer();
                 IsLoading = false;
@@ -321,9 +323,8 @@ namespace JumpFocus.ViewModels
                 return _escapeCommand
                     ?? (_escapeCommand = new ActionCommand(() =>
                     {
-                        InputTextValue = string.Empty;
                         IsLoading = false;
-                        InitNames();
+                        Reset();
                     }));
             }
         }
