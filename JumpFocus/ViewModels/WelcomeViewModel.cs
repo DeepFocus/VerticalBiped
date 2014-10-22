@@ -1,30 +1,25 @@
 ﻿using System.Configuration;
-using System.IO;
 using System.Runtime.Caching;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Caliburn.Micro;
 using JumpFocus.Models;
 using JumpFocus.Models.API;
-using Microsoft.Kinect;
-using Microsoft.Speech.AudioFormat;
-using Microsoft.Speech.Recognition;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using JumpFocus.DAL;
 using JumpFocus.Proxies;
+using JumpFocus.Repositories;
 
 namespace JumpFocus.ViewModels
 {
     class WelcomeViewModel : Screen
     {
         private Player _player;
-        private readonly ObjectCache _cache;
+
         private readonly TwitterConfig _twitterConfig = new TwitterConfig
         {
             AccessToken = ConfigurationManager.AppSettings["TwitterAccessToken"],
@@ -35,15 +30,15 @@ namespace JumpFocus.ViewModels
         private readonly string _twitterScreenName = ConfigurationManager.AppSettings["TwitterScreenName"];
 
         private readonly PlayerProxy _playersProxy;
-        private Choices _names;
         private TextBox _textBox;
 
         private readonly DispatcherTimer _aTimer = new DispatcherTimer
         {
-            Interval = new TimeSpan(0, 0, 0, 2),
+            Interval = new TimeSpan(0, 0, 0, 1),
             IsEnabled = true
         };
 
+        #region Properties
         private string _guide;
         public string Guide
         {
@@ -65,6 +60,8 @@ namespace JumpFocus.ViewModels
                 NotifyOfPropertyChange(() => BottomGuide);
             }
         }
+
+
 
         private string _bgVideo;
         public string BgVideo
@@ -118,7 +115,36 @@ namespace JumpFocus.ViewModels
             {
                 _isLoading = value;
                 NotifyOfPropertyChange(() => IsLoading);
+                NotifyOfPropertyChange(() => NotLoading);
             }
+        }
+
+        private bool _isError;
+        public bool IsError
+        {
+            get { return _isError; }
+            private set
+            {
+                _isError = value;
+                NotifyOfPropertyChange(() => IsError);
+            }
+        }
+
+        private Brush _borderColor;
+        public Brush BorderColor
+        {
+            get { return _borderColor; }
+            private set
+            {
+                _borderColor = value;
+                NotifyOfPropertyChange(() => BorderColor);
+                NotifyOfPropertyChange(() => NotLoading);
+            }
+        }
+
+        public bool NotLoading
+        {
+            get { return !IsLoading && !IsError; }
         }
 
         private string _inputTextValue;
@@ -152,24 +178,21 @@ namespace JumpFocus.ViewModels
                 _twitterPhoto = value;
                 NotifyOfPropertyChange(() => TwitterPhoto);
             }
-        }
+        } 
+        #endregion
 
         private readonly IConductor _conductor;
-        private readonly KinectSensor _sensor;
-        private KinectAudioStream _convertStream;
-        private SpeechRecognitionEngine _speechEngine;
 
-        public WelcomeViewModel(IConductor conductor, KinectSensor kinectSensor)
+        public WelcomeViewModel(IConductor conductor)
         {
             _conductor = conductor;
-            _sensor = kinectSensor;
-            _cache = new MemoryCache(GetType().FullName);
-            _playersProxy = new PlayerProxy(_cache, _twitterConfig, _twitterScreenName);
+            ObjectCache cache = new MemoryCache(GetType().FullName);
+            _playersProxy = new PlayerProxy(cache, _twitterConfig, _twitterScreenName);
         }
 
         protected async override void OnViewLoaded(object view)
         {
-            _aTimer.Tick += OnInput;
+
             var frameworkElement = view as FrameworkElement;
             if (frameworkElement != null)
             {
@@ -186,32 +209,9 @@ namespace JumpFocus.ViewModels
                 }
             }
 
-            BottomGuide = "Waiting for Kinect...";
-            BgVideo = "Resources\\Videos\\Video.mp4";
-            TwitterHandle = string.Empty;
-            PlayerName = string.Empty;
-            TwitterPhoto = null;
-
-            await InitKinectAsync();
             BottomGuide = "Loading...";
-            //await Task.Factory.StartNew(t => 
-            //    {
-            //        try
-            //        {
-            //            var players = _playersProxy.GetAllPlayers().Result;
-            //            _names = new Choices();
-            //            foreach (var p in players)
-            //            {
-            //                _names.Add(new SemanticResultValue(p.Name, p.Id));
-            //                _names.Add(new SemanticResultValue(p.TwitterHandle, p.Id));
-            //            }
-            //        }
-            //        catch (Exception)
-            //        {
-            //            this.TryClose();    
-            //        }
-            //    }, TaskCreationOptions.LongRunning);
-
+            BgVideo = "Resources\\Videos\\Video.mp4";
+            
             await _playersProxy.CacheWarmup();
             if (null != frameworkElement)
             {
@@ -226,107 +226,52 @@ namespace JumpFocus.ViewModels
                     _textBox.Focus();
                 }
             }
-            InitNames();
-
+            Reset();
+            _aTimer.Tick += OnInput;
             base.OnViewLoaded(view);
         }
 
         protected override void OnDeactivate(bool close)
         {
             _aTimer.Tick -= OnInput;
-            if (null != _convertStream)
-            {
-                _convertStream.SpeechActive = false;
-            }
-            if (null != _speechEngine)
-            {
-                _speechEngine.SpeechRecognized -= NameRecognized;
-                _speechEngine.RecognizeAsyncStop();
-            }
-            if (null != _sensor)
-            {
-                _sensor.Close();
-            }
-
+            Reset();
             base.OnDeactivate(close);
         }
 
-        private void InitNames()
+        private void Reset()
         {
-            //Initialize the speech recognition engine with user names
-            //Generates a "The calling thread must be STA, because many UI components require this." exception when coming back to this screen
+           //Generates a "The calling thread must be STA, because many UI components require this." exception when coming back to this screen
 
             _player = null;
             UpdatePlayer();
             InputTextBoxVisible = true;
+            InputTextValue = string.Empty;
+            IsError = false;
+            TwitterHandle = string.Empty;
+            PlayerName = string.Empty;
+            TwitterPhoto = null;
+            BorderColor = Brushes.WhiteSmoke;
 
             BottomGuide = string.Empty;
             Guide = "What's your name?";
             BgVideo = "Resources\\Videos\\Video2.mp4";
-            //Task.Run( () => SpeechInitialization(_names, NameRecognized));
-        }
-
-        readonly TaskCompletionSource<bool> _resultCompletionSource = new TaskCompletionSource<bool>();
-        private async Task<bool> InitKinectAsync()
-        {
-            _sensor.Open();
-            _sensor.IsAvailableChanged += Sensor_IsAvailableChanged;
-            return await _resultCompletionSource.Task;
-        }
-
-        private void Sensor_IsAvailableChanged(object sender, IsAvailableChangedEventArgs e)
-        {
-            if (_sensor != null && _sensor.IsAvailable && !_resultCompletionSource.Task.IsCompleted)
-            {
-                // grab the audio stream
-                IReadOnlyList<AudioBeam> audioBeamList = _sensor.AudioSource.AudioBeams;
-                Stream audioStream = audioBeamList[0].OpenInputStream();
-                _convertStream = new KinectAudioStream(audioStream);
-                _sensor.IsAvailableChanged -= Sensor_IsAvailableChanged;
-                _resultCompletionSource.SetResult(true);
-            }
-        }
-
-        private void SpeechInitialization(Choices names, EventHandler<SpeechRecognizedEventArgs> success)
-        {
-            RecognizerInfo ri = GetKinectRecognizer();
-
-            if (null != ri)
-            {
-                _speechEngine = new SpeechRecognitionEngine(ri.Id);
-
-                var gb = new GrammarBuilder { Culture = ri.Culture };
-                gb.Append(names);
-
-                var g = new Grammar(gb);
-                _speechEngine.LoadGrammar(g);
-
-                _speechEngine.SpeechRecognized += success;
-
-                // let the convertStream know speech is going active
-
-
-                // For long recognition sessions (a few hours or more), it may be beneficial to turn off adaptation of the acoustic model. 
-                // This will prevent recognition accuracy from degrading over time.
-                ////speechEngine.UpdateRecognizerSetting("AdaptationOn", 0);
-                _convertStream.SpeechActive = false;
-                _speechEngine.SetInputToAudioStream(
-                    _convertStream, new SpeechAudioFormatInfo(EncodingFormat.Pcm, 16000, 16, 1, 32000, 2, null));
-                _convertStream.SpeechActive = true;
-                _speechEngine.RecognizeAsync(RecognizeMode.Multiple);
-            }
         }
 
         #region Input Text Handling
         private bool _isTyping;
+        private string _previousValue;
 
         private async void OnInput(object sender, EventArgs e)
         {
-            if (null != _textBox && !string.IsNullOrWhiteSpace(_textBox.Text))
+            if (!_isTyping && _previousValue != InputTextValue)
             {
                 _isTyping = true;
-                _aTimer.Start();
+                IsError = false;
+                BorderColor = Brushes.WhiteSmoke;
                 IsLoading = true;
+                TwitterPhoto = null;
+                TwitterHandle = string.Empty;
+                _previousValue = InputTextValue;
                 _player = await PlayerSearch(InputTextValue);
                 UpdatePlayer();
                 IsLoading = false;
@@ -338,18 +283,25 @@ namespace JumpFocus.ViewModels
         {
             if (_player == null)
             {
-                TwitterHandle = string.Empty;
-                PlayerName = string.Empty;
-                TwitterPhoto = null;
-                InputTextValue = string.Empty;
-                FoundTextValue = string.Empty;
+                if (InputTextValue != string.Empty)
+                {
+                    IsError = true; 
+                    BorderColor = Brushes.Red;                    
+                }
                 IsLoading = false;
+                              
+                PlayerName = string.Empty;
+                TwitterHandle = string.Empty;
+                TwitterPhoto = null;
+                FoundTextValue = string.Empty;
+
                 return;
             }
-            FoundTextValue = _player.TwitterHandle.Substring(_textBox.Text.Length);
+            IsError = false;
+            BorderColor = Brushes.WhiteSmoke;
+            FoundTextValue = _player.TwitterHandle.Length >= _textBox.Text.Length ? _player.TwitterHandle.Substring(_textBox.Text.Length) : "";
             PlayerName = _player.Name;
             TwitterPhoto = new BitmapImage(new Uri(_player.TwitterPhoto));
-            RecognizeConfirmation();
         }
 
         private async Task<Player> PlayerSearch(string query)
@@ -363,87 +315,6 @@ namespace JumpFocus.ViewModels
         }
         #endregion
 
-        /// <summary>
-        /// Handler for recognized speech events.
-        /// </summary>
-        /// <param name="sender">object sending the event.</param>
-        /// <param name="e">event arguments.</param>
-        private void NameRecognized(object sender, SpeechRecognizedEventArgs e)
-        {
-            // Speech utterance confidence below which we treat speech as if it hadn't been heard
-            const double confidenceThreshold = 0.3;
-
-            if (e.Result.Confidence >= confidenceThreshold)
-            {
-                //if ((int) e.Result.Semantics.Value == 0)
-                //{
-                //    TwitterHandle = "Guest";
-                //    PlayerName = "Guest";
-                //}
-                //else
-                //{
-                //}
-                var dbRepo = new JumpFocusContext();
-                _player = dbRepo.Players.Single(p => p.Id == (int)e.Result.Semantics.Value);
-                UpdatePlayer();
-            }
-        }
-
-        private bool _isConfirming;
-        private void RecognizeConfirmation()
-        {
-            _isConfirming = true;
-            var handles = new Choices();
-            handles.Add(new SemanticResultValue("yes", true));
-            handles.Add(new SemanticResultValue("no", false));
-
-            Guide = "Confirm with yes or no";
-            //Reinitialize the speech recognition engine for the yes/no
-            SpeechInitialization(handles, YesRecognized);
-        }
-
-        private void YesRecognized(object sender, SpeechRecognizedEventArgs e)
-        {
-            const double confidenceThresold = 0.3;
-
-            if (e.Result.Confidence >= confidenceThresold)
-            {
-                if ((bool)e.Result.Semantics.Value)
-                {
-                    _conductor.ActivateItem(new JumpViewModel(_conductor, _sensor, _player));
-                }
-                else
-                {
-                    OnActivate();
-                }
-                _isConfirming = false;
-            }
-        }
-
-
-
-        /// <summary>
-        /// Gets the metadata for the speech recognizer (acoustic model) most suitable to
-        /// process audio from Kinect device.
-        /// </summary>
-        /// <returns>
-        /// RecognizerInfo if found, <code>null</code> otherwise.
-        /// </returns>
-        private static RecognizerInfo GetKinectRecognizer()
-        {
-            foreach (RecognizerInfo recognizer in SpeechRecognitionEngine.InstalledRecognizers())
-            {
-                string value;
-                recognizer.AdditionalInfo.TryGetValue("Kinect", out value);
-                if ("True".Equals(value, StringComparison.OrdinalIgnoreCase) && "en-US".Equals(recognizer.Culture.Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    return recognizer;
-                }
-            }
-
-            return null;
-        }
-
         private ICommand _escapeCommand;
         public ICommand EscapeCommand
         {
@@ -452,13 +323,8 @@ namespace JumpFocus.ViewModels
                 return _escapeCommand
                     ?? (_escapeCommand = new ActionCommand(() =>
                     {
-                        InputTextValue = string.Empty;
                         IsLoading = false;
-                        if (_isConfirming)
-                        {
-                            _isConfirming = false;
-                            InitNames();
-                        }
+                        Reset();
                     }));
             }
         }
@@ -473,7 +339,7 @@ namespace JumpFocus.ViewModels
                     {
                         if (_player != null)
                         {
-                            _conductor.ActivateItem(new JumpViewModel(_conductor, _sensor, _player));
+                            _conductor.ActivateItem(new JumpViewModel(_conductor, _player));
                         }
                     }));
             }

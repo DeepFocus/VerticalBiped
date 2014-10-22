@@ -47,7 +47,7 @@ namespace JumpFocus.ViewModels
         private ulong _currentUserId;
         private Avatar _avatar;
         private GameWorld _gameWorld;
-        private Player _player;
+        private readonly Player _player;
 
         public DrawingImage Video
         {
@@ -59,10 +59,10 @@ namespace JumpFocus.ViewModels
             }
         }
 
-        public JumpViewModel(IConductor conductor, KinectSensor kinectSensor, Player player)
+        public JumpViewModel(IConductor conductor, Player player)
         {
             _conductor = conductor;
-            _sensor = kinectSensor;
+            _sensor = KinectSensor.GetDefault();
             _player = player;
         }
 
@@ -98,7 +98,7 @@ namespace JumpFocus.ViewModels
                 _colorPoints = new ColorSpacePoint[depthWidth * depthHeight];
 
                 //_world = new FP.Dynamics.World(new Vector2(0, 9.82f));
-                _world = new FP.Dynamics.World(new Vector2(0, 7f));
+                _world = new FP.Dynamics.World(new Vector2(0, 5f));
                 FP.ConvertUnits.SetDisplayUnitToSimUnitRatio(128f);
 
                 //Create the world
@@ -243,7 +243,7 @@ namespace JumpFocus.ViewModels
                                             db.Players.AddOrUpdate(_player);
                                             db.SaveChanges();
 
-                                            _conductor.ActivateItem(new LeaderBoardViewModel(_conductor, _sensor));
+                                            _conductor.ActivateItem(new LeaderBoardViewModel(_conductor));
                                         }
                                     }
                                 }

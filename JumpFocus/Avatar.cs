@@ -237,7 +237,7 @@ namespace JumpFocus
         {
             if (IsReadyToJump && Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
             {
-                float speedFactor = 2f;
+                float speedFactor = 1f;
                 StepSeconds = StepSeconds / speedFactor;
 
                 //Jump

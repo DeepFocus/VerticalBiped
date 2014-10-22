@@ -1,8 +1,9 @@
-﻿using Caliburn.Micro;
+﻿using System.Configuration;
+using Caliburn.Micro;
 using JumpFocus.DAL;
 using JumpFocus.Models;
-using Microsoft.Kinect;
-using System.Collections.Generic;
+using JumpFocus.Models.API;
+using JumpFocus.Repositories;
 using System.Linq;
 using System.Threading;
 
@@ -10,8 +11,16 @@ namespace JumpFocus.ViewModels
 {
     class LeaderBoardViewModel : Screen
     {
+
+        private readonly TwitterConfig _twitterConfig = new TwitterConfig
+        {
+            AccessToken = ConfigurationManager.AppSettings["TwitterAccessToken"],
+            AccessTokenSecret = ConfigurationManager.AppSettings["TwitterAccessTokenSecret"],
+            ConsumerKey = ConfigurationManager.AppSettings["TwitterConsumerKey"],
+            ConsumerSecret = ConfigurationManager.AppSettings["TwitterConsumerSecret"]
+        };
+
         private readonly IConductor _conductor;
-        private readonly KinectSensor _sensor;
 
         private History _lastPlayed;
         public History LastPlayed
@@ -37,13 +46,15 @@ namespace JumpFocus.ViewModels
             }
         }
 
-        public LeaderBoardViewModel(IConductor conductor, KinectSensor kinectSensor)
+        private readonly TwitterRepository _twitterRepo;
+
+        public LeaderBoardViewModel(IConductor conductor)
         {
+            _twitterRepo = new TwitterRepository(_twitterConfig);
             _conductor = conductor;
-            _sensor = kinectSensor;
         }
 
-        protected override void OnActivate()
+        protected async override void OnActivate()
         {
             var dbRepo = new JumpFocusContext();
             _lastPlayed = dbRepo.Histories.Include("Player").OrderByDescending(h => h.Played).First();
@@ -90,6 +101,7 @@ namespace JumpFocus.ViewModels
                 }
             }
 
+            await _twitterRepo.PostStatusUpdate("Another vertical biped!", _lastPlayed.Mugshot);
             var t = new Timer(state => _conductor.ActivateItem(((MainViewModel)_conductor).WelcomeViewModel));
             t.Change(15000, Timeout.Infinite);//waits 10sec
         }
