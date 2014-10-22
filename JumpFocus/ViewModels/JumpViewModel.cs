@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using FP = FarseerPhysics;
+using System.Drawing;
 
 namespace JumpFocus.ViewModels
 {
@@ -178,6 +179,26 @@ namespace JumpFocus.ViewModels
 
                                     if (_readyCounter > _countDown)
                                     {
+                                        //screenshot
+                                        if (string.IsNullOrWhiteSpace(_filePath))
+                                        {
+                                            //get body index
+                                            for (byte index = 0; index < _bodies.Length; index++)
+                                            {
+                                                if (_bodies[index].TrackingId == _currentUserId)
+                                                {
+                                                    //mugshot
+                                                    var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body, index);
+                                                    //_filePath = SaveBitmap(headBitmap);
+                                                    GeneratePostCard(headBitmap);
+                                                    //var bodyBitmap = RenderBodyshot(colorFrame, depthFrame,
+                                                    //    bodyIndexFrame, index);
+                                                    //_filePath = SaveBitmap(bodyBitmap);
+                                                    break;
+                                                }
+                                            }
+                                        }
+
                                         _gameWorld.Message = "JUMP!!";
                                         _avatar.IsReadyToJump = true;
                                     }
@@ -204,24 +225,6 @@ namespace JumpFocus.ViewModels
                                     _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
                                     if (_gameWorld.HasLanded)
                                     {
-                                        if (string.IsNullOrWhiteSpace(_filePath))
-                                        {
-                                            //get body index
-                                            for (byte index = 0; index < _bodies.Length; index++)
-                                            {
-                                                if (_bodies[index].TrackingId == _currentUserId)
-                                                {
-                                                    //mugshot
-                                                    //var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body);
-                                                    //var filePath = SaveBitmap(headBitmap);
-                                                    var bodyBitmap = RenderBodyshot(colorFrame, depthFrame,
-                                                        bodyIndexFrame, index);
-                                                    _filePath = SaveBitmap(bodyBitmap);
-                                                    break;
-                                                }
-                                            }
-                                        }
-
                                         if (_gameWorld.Landed.AddSeconds(2) < DateTime.Now)
                                         {
                                             var history = new History
@@ -491,6 +494,28 @@ namespace JumpFocus.ViewModels
                     }
                 }
                 catch { }
+            }
+
+            return null;
+        }
+
+        private string GeneratePostCard(WriteableBitmap input)
+        {
+            if (null != input)
+            {
+                using (var background = Image.FromFile("Resources/Images/Twitter/card.png"))
+                using (var grfx = Graphics.FromImage(background))
+                {
+                    // create a png bitmap encoder which knows how to save a .png file
+                    BitmapEncoder encoder = new PngBitmapEncoder();
+                    // create frame from the writable bitmap and add to encoder
+                    encoder.Frames.Add(BitmapFrame.Create(input));
+                    var ms = new MemoryStream();
+                    encoder.Save(ms);
+                    var rect = new Rectangle(530, 105, (int)input.Width, (int)input.Height);
+                    grfx.DrawImage(Image.FromStream(ms), rect);
+                    background.Save(@"C:\temp\test_twitter.png");
+                }
             }
 
             return null;

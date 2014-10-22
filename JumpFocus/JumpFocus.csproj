@@ -208,6 +208,9 @@
     <Resource Include="Resources\Images\x.png" />
     <Resource Include="Resources\Images\fire.png" />
     <Content Include="Lib\Microsoft.Kinect.dll" />
+    <Content Include="Resources\Images\Twitter\card.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\Videos\Video.mp4">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
