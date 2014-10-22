@@ -2,10 +2,6 @@
 using JumpFocus.Models;
 using JumpFocus.Models.API;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JumpFocus.Configurations
 {
@@ -14,6 +10,7 @@ namespace JumpFocus.Configurations
         public static void RegisterMappings()
         {
             Mapper.CreateMap<TwitterUser, Player>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name))
                 .ForMember(dest => dest.TwitterId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.TwitterHandle, opt => opt.MapFrom(src => src.screen_name))

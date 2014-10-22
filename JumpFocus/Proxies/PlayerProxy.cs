@@ -50,12 +50,19 @@ namespace JumpFocus.Proxies
                     if (null != users)
                     {
                         var dbRepo = new JumpFocusContext();
-                        var players = Mapper.Map<List<Player>>(users);
+                        try
+                        {
+                            var players = Mapper.Map<List<Player>>(users);
+
                         dbRepo.Players.AddOrUpdate(players.ToArray());
                         Players.AddRange(players); //update cache
 
                         result = players.FirstOrDefault();
-
+                        }
+                        catch (Exception)
+                        {
+                            int i = 12;
+                        }
                         await dbRepo.SaveChangesAsync();
                     }
                 }

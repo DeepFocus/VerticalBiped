@@ -19,14 +19,14 @@
     </UserControl.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="0.4*"/>
+            <RowDefinition Height="0.6*"/>
             <RowDefinition />
             <RowDefinition Height="0.4*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.7*"/>
+            <ColumnDefinition Width="0.5*"/>
             <ColumnDefinition />
-            <ColumnDefinition Width="0.7*"/>
+            <ColumnDefinition Width="0.5*"/>
         </Grid.ColumnDefinitions>
         <Grid.Background>
             <VisualBrush Stretch="Fill">
@@ -43,7 +43,7 @@
                                FontSize="26" FontFamily="../Resources/Fonts/#OCR-A" Foreground="Lime"  Height="82"/>
                 <TextBlock Text="2. Fill in your name and find &#10;your twitter handle"  Margin="0, 5, 0, 30"
             	        FontSize="26" FontFamily="../Resources/Fonts/#OCR-A" Foreground="Lime" />
-                <Border BorderThickness="6" BorderBrush="#FFC5C5C5">
+                <Border BorderThickness="6" BorderBrush="{Binding BorderColor}">
                     <Border.Effect>
                         <BlurEffect Radius="3" />
                     </Border.Effect>
@@ -59,16 +59,16 @@
                 				Foreground="#FF707070" Background="Black" Opacity="0.7" />
                     </Grid>
                 </Border>
-
-                <StackPanel Orientation="Horizontal" Margin="0, 20, 0, 0">
-                    <TextBlock Text="Loading..." Margin="120, 0, 0, 0" FontSize="34" Foreground="Yellow" FontFamily="../Resources/Fonts/#OCR-A" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisConverter}}" />
-                    <Image  Source="{Binding TwitterPhoto}" VerticalAlignment="Top" Margin="10" />
-                    <TextBlock Text="{Binding PlayerName}" FontSize="36" Height="156" Margin="10" TextAlignment="Center" Foreground="Lime" />
-                </StackPanel>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="240, 20, 0, 0">
+                <TextBlock Text="Loading..." Margin="120, 0, 0, 0" FontSize="34" Foreground="Yellow" FontFamily="../Resources/Fonts/#OCR-A" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisConverter}}" />
+                <TextBlock Text="No Results..." Margin="120, 0, 0, 0" FontSize="34" Foreground="Red" FontFamily="../Resources/Fonts/#OCR-A" Visibility="{Binding IsError, Converter={StaticResource BoolToVisConverter}}" />
+                <Image  Source="{Binding TwitterPhoto}" VerticalAlignment="Top" Margin="10" Visibility="{Binding NotLoading, Converter={StaticResource BoolToVisConverter}}" />
+                <TextBlock Text="{Binding PlayerName}" FontSize="36" Height="156" Margin="10" Visibility="{Binding NotLoading, Converter={StaticResource BoolToVisConverter}}" TextAlignment="Center" Foreground="Lime" />
             </StackPanel>
         </StackPanel>
         <TextBlock Text="Press Enter to choose or ESC to restart." Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" 
-                   HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="20" FontSize="26" FontFamily="../Resources/Fonts/#OCR-A"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="20" FontWeight="Bold" FontSize="32" FontFamily="../Resources/Fonts/#OCR-A"
                     Visibility="{Binding InputTextBoxVisible, Converter={StaticResource BoolToVisConverter}}"  Foreground="Lime" />
         <TextBlock Text="by DEEP FOCUS" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right" 
                    VerticalAlignment="Bottom" Margin="20" FontSize="14" FontWeight="Bold" Foreground="Red" />

@@ -58,10 +58,10 @@ namespace JumpFocus.ViewModels
             }
         }
 
-        public JumpViewModel(IConductor conductor, KinectSensor kinectSensor, Player player)
+        public JumpViewModel(IConductor conductor, Player player)
         {
             _conductor = conductor;
-            _sensor = kinectSensor;
+            _sensor = KinectSensor.GetDefault();
             _player = player;
         }
 
