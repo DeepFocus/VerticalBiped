@@ -1,6 +1,6 @@
 ﻿using System.Configuration;
 using Caliburn.Micro;
-using Microsoft.Kinect;
+using JumpFocus.Models;
 using JumpFocus.Configurations;
 
 namespace JumpFocus.ViewModels
@@ -14,6 +14,7 @@ namespace JumpFocus.ViewModels
             WelcomeViewModel = new WelcomeViewModel(this);
 
             ActivateItem(WelcomeViewModel);
+            ActivateItem(new JumpViewModel(this, new Player()));
             DisplayName = ConfigurationManager.AppSettings["appName"];
         }
 

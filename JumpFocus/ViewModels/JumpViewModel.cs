@@ -189,11 +189,12 @@ namespace JumpFocus.ViewModels
                                                 {
                                                     //mugshot
                                                     var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body, index);
-                                                    //_filePath = SaveBitmap(headBitmap);
-                                                    GeneratePostCard(headBitmap);
-                                                    //var bodyBitmap = RenderBodyshot(colorFrame, depthFrame,
-                                                    //    bodyIndexFrame, index);
-                                                    //_filePath = SaveBitmap(bodyBitmap);
+                                                    BitmapEncoder encoder = new PngBitmapEncoder();
+                                                    encoder.Frames.Add(BitmapFrame.Create(headBitmap));
+                                                    var ms = new MemoryStream();
+                                                    encoder.Save(ms);
+                                                    Image headPng = Image.FromStream(ms);
+                                                    GeneratePostCard(headPng);
                                                     break;
                                                 }
                                             }
@@ -499,26 +500,28 @@ namespace JumpFocus.ViewModels
             return null;
         }
 
-        private string GeneratePostCard(WriteableBitmap input)
+        private void GeneratePostCard(Image input)
         {
             if (null != input)
             {
-                using (var background = Image.FromFile("Resources/Images/Twitter/card.png"))
-                using (var grfx = Graphics.FromImage(background))
+                using (var background = Image.FromFile("Resources/Images/Twitter/card-bg.png"))
+                using (var picture = input)
+                using (var frame = Image.FromFile("Resources/Images/Twitter/card.png"))
+                using (var newImage = new Bitmap(background.Width, background.Height))
+                using (var grfx = Graphics.FromImage(newImage))
                 {
-                    // create a png bitmap encoder which knows how to save a .png file
-                    BitmapEncoder encoder = new PngBitmapEncoder();
-                    // create frame from the writable bitmap and add to encoder
-                    encoder.Frames.Add(BitmapFrame.Create(input));
-                    var ms = new MemoryStream();
-                    encoder.Save(ms);
-                    var rect = new Rectangle(530, 105, (int)input.Width, (int)input.Height);
-                    grfx.DrawImage(Image.FromStream(ms), rect);
-                    background.Save(@"C:\temp\test_twitter.png");
+                    var newWidth = input.Width + 10;
+                    var newHeight = input.Height + 10;
+                    grfx.DrawImage(background, new Rectangle(0, 0, background.Width, background.Height));
+                    grfx.DrawImage(picture, new Rectangle(528 - (newWidth / 2), 100 - (newHeight / 2), newWidth, newHeight));
+                    grfx.DrawImage(frame, new Rectangle(0, 0, frame.Width, frame.Height));
+
+                    string time = DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
+                    string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+                    string path = Path.Combine(myPhotos, "BipedPostcard-" + time + ".png");
+                    newImage.Save(path);
                 }
             }
-
-            return null;
         }
 
         protected override void OnDeactivate(bool close)
