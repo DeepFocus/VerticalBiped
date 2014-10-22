@@ -518,8 +518,8 @@ namespace JumpFocus.ViewModels
 
                     string time = DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
                     string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-                    string path = Path.Combine(myPhotos, "BipedPostcard-" + time + ".png");
-                    newImage.Save(path);
+                    _filePath = Path.Combine(myPhotos, "BipedPostcard-" + time + ".png");
+                    newImage.Save(_filePath);
                 }
             }
         }

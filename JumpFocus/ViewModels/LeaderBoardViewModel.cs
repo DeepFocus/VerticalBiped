@@ -100,7 +100,9 @@ namespace JumpFocus.ViewModels
                         break;
                 }
             }
-            await _twitterRepo.PostStatusUpdate(ConfigurationManager.AppSettings["TwitterMessage"], _lastPlayed.Mugshot);
+            await _twitterRepo.PostStatusUpdate(
+                string.Concat(ConfigurationManager.AppSettings["TwitterMessage"], " @" , _lastPlayed.Player.TwitterHandle),
+                _lastPlayed.Mugshot);
             var t = new Timer(state => _conductor.ActivateItem(((MainViewModel)_conductor).WelcomeViewModel));
             t.Change(15000, Timeout.Infinite);//waits 10sec
         }
