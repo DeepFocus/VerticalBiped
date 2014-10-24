@@ -468,7 +468,9 @@ namespace JumpFocus.ViewModels
                 using (var grfx = Graphics.FromImage(newImage))
                 {
                     grfx.Clear(Color.FromArgb(231, 238, 233));
-                    grfx.DrawImage(picture, new Rectangle(490, 65, 70, 70));
+                    var newWidth = input.Width + 10;
+                    var newHeight = input.Height + 10;
+                    grfx.DrawImage(picture, new Rectangle(528 - (newWidth / 2), 100 - (newHeight / 2), newWidth, newHeight));
                     grfx.DrawImage(frame, new Rectangle(0, 0, frame.Width, frame.Height));
 
                     var fontCollection = new PrivateFontCollection();
