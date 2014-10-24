@@ -3,6 +3,7 @@ using Caliburn.Micro;
 using JumpFocus.DAL;
 using JumpFocus.Models;
 using Microsoft.Kinect;
+using Microsoft.Kinect.VisualGestureBuilder;
 using Microsoft.Xna.Framework;
 using System;
 using System.Diagnostics;
@@ -48,6 +49,21 @@ namespace JumpFocus.ViewModels
         private Avatar _avatar;
         private GameWorld _gameWorld;
         private readonly Player _player;
+
+        //Gesture detection
+        /// <summary> Path to the gesture database that was trained with VGB </summary>
+        private const string GestureDatabase = @"Database\jump.gbd";
+        /// <summary> Name of the discrete gesture in the database that we want to track </summary>
+        private const string JumpDiscreteGestureName = "Jump";
+        private const string JumpContinousGestureName = "JumpProgress";
+        private const string NavigateLeftContinousGestureName = "NavigateProgress_Left";
+        private const string NavigateRightContinousGestureName = "NavigateProgress_Right";
+        /// <summary> Gesture frame source which should be tied to a body tracking ID </summary>
+        private VisualGestureBuilderFrameSource _vgbFrameSource;
+        /// <summary> Gesture frame reader which will handle gesture events coming from the sensor </summary>
+        private VisualGestureBuilderFrameReader _vgbFrameReader;
+        private bool _isJumping = false;
+        private bool _hasJumped = false;
 
         public DrawingImage Video
         {
@@ -111,6 +127,22 @@ namespace JumpFocus.ViewModels
 
                 //Needs to be the last step
                 _reader.MultiSourceFrameArrived += Reader_MultiSourceFrameArrived;
+
+                //Gesture
+                // create the vgb source. The associated body tracking ID will be set when a valid body frame arrives from the sensor.
+                _vgbFrameSource = new VisualGestureBuilderFrameSource(_sensor, 0);
+                // open the reader for the vgb frames
+                _vgbFrameReader = this._vgbFrameSource.OpenReader();
+                if (_vgbFrameReader != null)
+                {
+                    _vgbFrameReader.IsPaused = true;
+                    _vgbFrameReader.FrameArrived += Reader_GestureFrameArrived;
+                }
+                // load the 'Jump' gesture from the gesture database
+                using (var database = new VisualGestureBuilderDatabase(GestureDatabase))
+                {
+                    _vgbFrameSource.AddGestures(database.AvailableGestures);
+                }
             }
         }
 
@@ -157,56 +189,10 @@ namespace JumpFocus.ViewModels
                             if (_bodies.Any(b => b.TrackingId == _currentUserId && b.IsTracked))
                             {
                                 var body = _bodies.First(b => b.TrackingId == _currentUserId);
-                                
+
                                 if (!_gameWorld.HasLanded)
                                 {
                                     _avatar.Move(body.Joints, stepSeconds);
-                                }
-
-                                //player ready
-                                if (!_avatar.HasJumped && !_avatar.IsReadyToJump)
-                                {
-                                    if (body.HandRightState == HandState.Closed)//&& body.HandRightState == HandState.Closed)
-                                    {
-                                        _readyCounter += stepSeconds;
-                                        _gameWorld.Message = string.Format("Ready in {0}", Math.Round(_countDown - _readyCounter) + 1);//+1 to not display the 0
-                                    }
-                                    else
-                                    {
-                                        _gameWorld.Message = string.Format("Keep both fists closed");
-                                        _readyCounter = 0;
-                                    }
-
-                                    if (_readyCounter > _countDown)
-                                    {
-                                        //screenshot
-                                        if (string.IsNullOrWhiteSpace(_filePath))
-                                        {
-                                            //get body index
-                                            for (byte index = 0; index < _bodies.Length; index++)
-                                            {
-                                                if (_bodies[index].TrackingId == _currentUserId)
-                                                {
-                                                    //mugshot
-                                                    var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body, index);
-                                                    //_filePath = SaveBitmap(headBitmap);
-                                                    GeneratePostCard(headBitmap);
-                                                    //var bodyBitmap = RenderBodyshot(colorFrame, depthFrame,
-                                                    //    bodyIndexFrame, index);
-                                                    //_filePath = SaveBitmap(bodyBitmap);
-                                                    break;
-                                                }
-                                            }
-                                        }
-
-                                        _gameWorld.Message = "JUMP!!";
-                                        _avatar.IsReadyToJump = true;
-                                    }
-                                }
-
-                                if (_avatar.IsReadyToJump)
-                                {
-                                    _avatar.Jump(body.Joints, stepSeconds);
                                 }
 
                                 if (_avatar.HasJumped && !string.IsNullOrWhiteSpace(_gameWorld.Message) && !_gameWorld.HasLanded)
@@ -217,6 +203,26 @@ namespace JumpFocus.ViewModels
                                 if (_gameWorld.HasLanded)
                                 {
                                     _avatar.Land();
+
+                                    //screenshot
+                                    if (string.IsNullOrWhiteSpace(_filePath))
+                                    {
+                                        //get body index
+                                        for (byte index = 0; index < _bodies.Length; index++)
+                                        {
+                                            if (_bodies[index].TrackingId == _currentUserId)
+                                            {
+                                                //mugshot
+                                                var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body, index);
+                                                //_filePath = SaveBitmap(headBitmap);
+                                                GeneratePostCard(headBitmap);
+                                                //var bodyBitmap = RenderBodyshot(colorFrame, depthFrame,
+                                                //    bodyIndexFrame, index);
+                                                //_filePath = SaveBitmap(bodyBitmap);
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
 
                                 if (null != _avatar)
@@ -259,10 +265,14 @@ namespace JumpFocus.ViewModels
                                         && distance > _bodies[index].Joints[JointType.SpineMid].Position.Z)
                                     {
                                         _currentUserId = _bodies[index].TrackingId;
+
+                                        //gesture
+                                        _vgbFrameSource.TrackingId = _currentUserId;
+                                        _vgbFrameReader.IsPaused = false;
+
                                         if (null == _avatar)
                                         {
                                             _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 4f));
-
                                             _world.Step(0);
                                         }
                                         distance = _bodies[index].Joints[JointType.SpineMid].Position.Z;
@@ -275,90 +285,70 @@ namespace JumpFocus.ViewModels
             }
         }
 
-        private WriteableBitmap RenderBodyshot(ColorFrame colorFrame, DepthFrame depthFrame, BodyIndexFrame bodyIndexFrame, byte bodyIndex)
+        private void Reader_GestureFrameArrived(object sender, VisualGestureBuilderFrameArrivedEventArgs e)
         {
-            if (colorFrame.RawColorImageFormat == ColorImageFormat.Bgra)
+            VisualGestureBuilderFrameReference frameReference = e.FrameReference;
+            using (VisualGestureBuilderFrame frame = frameReference.AcquireFrame())
             {
-                colorFrame.CopyRawFrameDataToArray(_colorPixels);
-            }
-            else
-            {
-                colorFrame.CopyConvertedFrameDataToArray(_colorPixels, ColorImageFormat.Bgra);
-            }
-
-            var colorFrameDescription = colorFrame.FrameDescription;
-            var colorWidth = colorFrameDescription.Width;
-            var colorHeight = colorFrameDescription.Height;
-
-            var depthFrameDescription = depthFrame.FrameDescription;
-            var depthWidth = depthFrameDescription.Width;
-            var depthHeight = depthFrameDescription.Height;
-
-            if ((depthWidth * depthHeight) == _depthFrameData.Length)
-            {
-                depthFrame.CopyFrameDataToArray(_depthFrameData);
-            }
-            _sensor.CoordinateMapper.MapDepthFrameToColorSpace(_depthFrameData, _colorPoints);
-
-
-            if (bodyIndexFrame != null)
-            {
-                var bodyIndexFrameDescription = bodyIndexFrame.FrameDescription;
-                var bodyIndexWidth = bodyIndexFrameDescription.Width;
-                var bodyIndexHeight = bodyIndexFrameDescription.Height;
-
-                if ((bodyIndexWidth * bodyIndexHeight) == _bodyIndexFrameData.Length)
+                if (frame != null)
                 {
-                    bodyIndexFrame.CopyFrameDataToArray(_bodyIndexFrameData);
-                }
-            }
+                    // get the discrete gesture results which arrived with the latest frame
+                    var discreteResults = frame.DiscreteGestureResults;
+                    var continousResults = frame.ContinuousGestureResults;
 
-            var displayPixels = new byte[depthWidth * depthHeight * _bytesPerPixel];
-            // loop over each row and column of the depth
-            for (int y = 0; y < depthHeight; ++y)
-            {
-                for (int x = 0; x < depthWidth; ++x)
-                {
-                    // calculate index into depth array
-                    int depthIndex = (y * depthWidth) + x;
-
-                    byte player = _bodyIndexFrameData[depthIndex];
-                    // retrieve the depth to color mapping for the current depth pixel
-                    ColorSpacePoint colorPoint = _colorPoints[depthIndex];
-
-                    // make sure the depth pixel maps to a valid point in color space
-                    int colorX = (int)Math.Floor(colorPoint.X + 0.5);
-                    int colorY = (int)Math.Floor(colorPoint.Y + 0.5);
-                    if ((colorX >= 0) && (colorX < colorWidth) && (colorY >= 0) && (colorY < colorHeight))
+                    //Manages the jump part
+                    if (null != discreteResults && null != continousResults)
                     {
-                        // set source for copy to the color pixel
-                        int displayIndex = depthIndex * _bytesPerPixel;
-                        // if we're tracking a player for the current pixel, sets its color and alpha to full
-                        if (player == bodyIndex)
+                        var discreteGesture = _vgbFrameSource.Gestures.FirstOrDefault(g => g.GestureType == GestureType.Discrete && g.Name == JumpDiscreteGestureName);
+                        var continousGesture = _vgbFrameSource.Gestures.FirstOrDefault(g => g.GestureType == GestureType.Continuous && g.Name == JumpContinousGestureName);
+                        ContinuousGestureResult continousResult;
+                        DiscreteGestureResult discreteResult;
+
+                        if (null != discreteGesture && null != continousGesture)
                         {
-                            // calculate index into color array
-                            int colorIndex = ((colorY * colorWidth) + colorX) * _bytesPerPixel;
-                            displayPixels[displayIndex++] = _colorPixels[colorIndex++];//blue
-                            displayPixels[displayIndex++] = _colorPixels[colorIndex++];//green
-                            displayPixels[displayIndex++] = _colorPixels[colorIndex];//red
-                            displayPixels[displayIndex] = 0xff;//alpha
+                            discreteResults.TryGetValue(discreteGesture, out discreteResult);
+                            continousResults.TryGetValue(continousGesture, out continousResult);
+                            if (null != discreteResult && null != continousResult)
+                            {
+                                if (discreteResult.Detected && !_hasJumped)
+                                {
+                                    _isJumping = true;
+                                    _avatar.Jump(continousResult.Progress);
+                                }
+                                if (_isJumping && !discreteResult.Detected)
+                                {
+                                    _hasJumped = true;
+                                }
+                            }
                         }
-                        else
+                    }
+                    //Manages the left/right navigation
+                    if (null != continousResults)
+                    {
+                        var continousLeftGesture = _vgbFrameSource.Gestures.FirstOrDefault(g => g.GestureType == GestureType.Continuous && g.Name == NavigateLeftContinousGestureName);
+                        var continousRightGesture = _vgbFrameSource.Gestures.FirstOrDefault(g => g.GestureType == GestureType.Continuous && g.Name == NavigateRightContinousGestureName);
+                        ContinuousGestureResult continousResult;
+
+                        if (null != continousLeftGesture)
                         {
-                            displayPixels[displayIndex + 3] = 0x00;//alpha
+                            continousResults.TryGetValue(continousLeftGesture, out continousResult);
+                            if (null != continousResult)
+                            {
+                                _avatar.Navigate(-continousResult.Progress);
+                            }
+                        }
+
+                        if (null != continousRightGesture)
+                        {
+                            continousResults.TryGetValue(continousRightGesture, out continousResult);
+                            if (null != continousResult)
+                            {
+                                _avatar.Navigate(continousResult.Progress);
+                            }
                         }
                     }
                 }
             }
-
-            var colorBitmap = new WriteableBitmap(depthFrameDescription.Width, depthFrameDescription.Height, 96.0, 96.0,
-                PixelFormats.Bgra32, null);
-            colorBitmap.WritePixels(
-                new Int32Rect(0, 0, depthFrameDescription.Width, depthFrameDescription.Height),
-                displayPixels,
-                colorBitmap.PixelWidth * _bytesPerPixel, 0);
-
-            return colorBitmap;
         }
 
         private WriteableBitmap RenderHeadshot(ColorFrame colorFrame, DepthFrame depthFrame, BodyIndexFrame bodyIndexFrame, Body body, byte bodyIndex)
@@ -464,39 +454,6 @@ namespace JumpFocus.ViewModels
             headBitmap.WritePixels(new Int32Rect(0, 0, headShot.Width, headShot.Height), headPixels,
                 headBitmap.PixelWidth * _bytesPerPixel, 0);
             return headBitmap;
-        }
-
-        private string SaveBitmap(WriteableBitmap input)
-        {
-            if (input != null)
-            {
-                // create a png bitmap encoder which knows how to save a .png file
-                BitmapEncoder encoder = new PngBitmapEncoder();
-
-                // create frame from the writable bitmap and add to encoder
-                encoder.Frames.Add(BitmapFrame.Create(input));
-
-                string time = DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
-
-                string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-
-                string path = Path.Combine(myPhotos, "KinectScreenshot-Color-" + time + ".png");
-
-                // write the new file to disk
-                try
-                {
-                    // FileStream is IDisposable
-                    using (var fs = new FileStream(path, FileMode.Create))
-                    {
-                        encoder.Save(fs);
-
-                        return path;
-                    }
-                }
-                catch { }
-            }
-
-            return null;
         }
 
         private string GeneratePostCard(WriteableBitmap input)

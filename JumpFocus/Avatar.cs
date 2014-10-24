@@ -31,10 +31,10 @@ namespace JumpFocus
         private readonly BitmapImage _torsoImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/Body.png"));
         private readonly BitmapImage _leftArmImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/LeftArm.png"));
         private readonly BitmapImage _rightArmImg = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/Avatar/RightArm.png"));
-        
+
         private RevoluteJoint _jRightArm;
         private RevoluteJoint _jLeftArm;
-        
+
         public Rect BodyCenter { get { return _torsoGeo.Rect; } }
 
         //Jump related
@@ -111,7 +111,7 @@ namespace JumpFocus
             {
                 return;
             }
-            
+
             _torsoGeo = new RectangleGeometry(new Rect
             {
                 //The center is the center in Geometry, not the top left
@@ -143,7 +143,7 @@ namespace JumpFocus
             dc.PushTransform(transform);
             dc.DrawImage(_leftArmImg, _leftArmGeo.Rect);
             dc.Pop();
-            
+
             _rightArmGeo = new RectangleGeometry(new Rect
             {
                 X = ConvertUnits.ToDisplayUnits(_rightArm.Position.X),
@@ -233,47 +233,26 @@ namespace JumpFocus
             _jRightArm.MotorEnabled = false;
         }
 
-        public bool Jump(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
+        /// <summary>
+        /// Triggers the jump of the body
+        /// </summary>
+        /// <param name="currentStage"></param>
+        public void Jump(float currentStage)
         {
-            if (IsReadyToJump && Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
+            if (_torso.LinearVelocity.Y <= 0)
             {
-                float speedFactor = 1f;
-                StepSeconds = StepSeconds / speedFactor;
-
-                //Jump
-                if (Joints[MK.JointType.SpineMid].TrackingState == MK.TrackingState.Tracked)
-                {
-                    var currentPosition = Joints[MK.JointType.SpineMid].Position;
-                    if (_previousPosition != default(MK.CameraSpacePoint))
-                    {
-                        if (HasJumped)
-                        {
-                            var hSpeed = -(50 * (_previousPosition.X - currentPosition.X) / StepSeconds);
-                            _torso.ApplyLinearImpulse(new Vector2(hSpeed, 0));
-                        }
-                        else if (StepSeconds > 0)
-                        {
-                            var currentSpeed = (currentPosition.Y - _previousPosition.Y) / StepSeconds;
-                            VerticalSpeed = VerticalSpeed > currentSpeed ? VerticalSpeed : currentSpeed;
-
-                            if (VerticalSpeed > 4)
-                            {
-                                _torso.BodyType = BodyType.Dynamic;
-                                _torso.ApplyLinearImpulse(new Vector2(0, -700 * VerticalSpeed));
-
-                                if (VerticalSpeed > currentSpeed + 1)
-                                {
-                                    HasJumped = true;
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    _previousPosition = currentPosition;
-                }
+                _torso.BodyType = BodyType.Dynamic;
             }
+            _torso.ApplyLinearImpulse(new Vector2(0, currentStage * -5000));
+        }
 
-            return false;
+        /// <summary>
+        /// Navigate the body
+        /// </summary>
+        /// <param name="currentStage"></param>
+        public void Navigate(float currentStage)
+        {
+            _torso.ApplyLinearImpulse(new Vector2(currentStage * 1000, 0));
         }
     }
 }

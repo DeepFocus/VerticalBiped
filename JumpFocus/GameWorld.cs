@@ -18,8 +18,8 @@ namespace JumpFocus
     {
         private readonly World _world;
 
-        private float _worldWidth = 150f, _worldHeight = 250f;
-        private readonly float _cameraWidth = 40f, _cameraHeight = 40f;
+        private float _worldWidth = 250f, _worldHeight = 500f;
+        private readonly float _cameraWidth = 80f, _cameraHeight = 80f;
 
         private Rect _camera;
         private Body _anchor;
@@ -151,11 +151,11 @@ namespace JumpFocus
             //Creates Dogecoins
             _coins = new List<Body>();
             var rand = new Random();
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 200; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
 
-                var coin = BodyFactory.CreateCircle(_world, _coinsRadius, 2f, position);
+                var coin = BodyFactory.CreateCircle(_world, ConvertUnits.ToSimUnits(_coinImg.Width / 2), 2f, position);
                 coin.BodyType = BodyType.Static;
                 coin.CollisionCategories = Category.Cat2;
                 coin.CollidesWith = Category.Cat1;
@@ -179,7 +179,7 @@ namespace JumpFocus
 
             _clouds = new List<Body>();
             rand = new Random();
-            for (int i = 0; i < 150; i++)
+            for (int i = 0; i < 300; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
                 //Create a single body with multiple fixtures
@@ -195,10 +195,11 @@ namespace JumpFocus
             //Add cats
             _cats = new List<Body>();
             rand = new Random();
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < 80; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
-                var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
+                //var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
+                var cat = BodyFactory.CreateCircle(_world, ConvertUnits.ToSimUnits(_catImg.Width / 2), 1f, position);
                 cat.BodyType = BodyType.Kinematic; // so they don't stop
                 cat.OnCollision += cat_OnCollision;
 
@@ -216,7 +217,7 @@ namespace JumpFocus
             var w = ConvertUnits.ToDisplayUnits(_worldWidth);
             var h = ConvertUnits.ToDisplayUnits(_worldHeight);
 
-            for (int i = 0; i < 200; i++)
+            for (int i = 0; i < 400; i++)
             {
                 _xs.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _xImg.Width, _xImg.Height));
                 _circles.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _circleImg.Width, _circleImg.Height));
@@ -312,7 +313,7 @@ namespace JumpFocus
                 var imgContainer = new Rect
                 {
                     X = ConvertUnits.ToDisplayUnits(cat.Position.X) - _catImg.Width / 2,
-                    Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) - _catImg.Height / 2,
+                    Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) - _catImg.Height / 1.3,
                     Width = _catImg.PixelWidth,
                     Height = _catImg.PixelHeight
                 };
@@ -328,7 +329,7 @@ namespace JumpFocus
                             var fireContainer = new Rect
                             {
                                 X = ConvertUnits.ToDisplayUnits(cat.Position.X) + _catImg.Width / 2,
-                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height / 2 - _fireImg.Height,
+                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height / 2.7 - _fireImg.Height,
                                 Width = _fireImg.PixelWidth,
                                 Height = _fireImg.PixelHeight
                             };
@@ -346,7 +347,7 @@ namespace JumpFocus
                             var fireContainer = new Rect
                             {
                                 X = ConvertUnits.ToDisplayUnits(cat.Position.X) - 1.25 * _catImg.Width,
-                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height / 2 - _fireImg.Height,
+                                Y = ConvertUnits.ToDisplayUnits(cat.Position.Y) + _catImg.Height / 2.7 - _fireImg.Height,
                                 Width = _fireImg.PixelWidth,
                                 Height = _fireImg.PixelHeight
                             };
@@ -453,8 +454,7 @@ namespace JumpFocus
         /// <returns></returns>
         bool cat_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
-            var body = fixtureB.Body;
-            return body.LinearVelocity.Y > 0f;
+            return fixtureB.Body.LinearVelocity.Y > 0f;
         }
 
         bool _floor_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
