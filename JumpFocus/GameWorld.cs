@@ -18,13 +18,12 @@ namespace JumpFocus
     {
         private readonly World _world;
 
-        private float _worldWidth = 250f, _worldHeight = 500f;
+        private const float _worldWidth = 250f,_worldHeight = 500f;
         private readonly float _cameraWidth = 80f, _cameraHeight = 80f;
 
         private Rect _camera;
         private Body _anchor;
         private Body _floor;
-        private List<Body> _ballBodies;
         private List<Body> _coins;
         private List<Body> _clouds;
         private List<Body> _cats;
@@ -33,6 +32,10 @@ namespace JumpFocus
         private List<Rect> _xs;
         private List<Rect> _circles;
         private List<Rect> _diamonds;
+        private List<Rect> _mountains1;
+        private List<Rect> _mountains2;
+        private List<Rect> _mountains3;
+        private List<Rect> _mountains4;
 
         private readonly Brush _floorBrush = new SolidColorBrush(Color.FromRgb(236, 124, 95));
         private readonly Brush _skyBrush = new SolidColorBrush(Color.FromRgb(236, 241, 237));
@@ -48,6 +51,10 @@ namespace JumpFocus
         private readonly Uri _xUri = new Uri("pack://application:,,,/Resources/Images/x.png");
         private readonly Uri _circleUri = new Uri("pack://application:,,,/Resources/Images/circle.png");
         private readonly Uri _diamondUri = new Uri("pack://application:,,,/Resources/Images/diamond.png");
+        private readonly Uri _mountain1Uri = new Uri("pack://application:,,,/Resources/Images/mountain1.png");
+        private readonly Uri _mountain2Uri = new Uri("pack://application:,,,/Resources/Images/mountain2.png");
+        private readonly Uri _mountain3Uri = new Uri("pack://application:,,,/Resources/Images/mountain3.png");
+        private readonly Uri _mountain4Uri = new Uri("pack://application:,,,/Resources/Images/mountain4.png");
 
         private readonly BitmapSource _cloudImg;
         private readonly BitmapSource _coin1Img;
@@ -61,12 +68,14 @@ namespace JumpFocus
         private readonly BitmapSource _xImg;
         private readonly BitmapSource _circleImg;
         private readonly BitmapSource _diamondImg;
-
-        private const float _coinsRadius = 1f;
-
+        private readonly BitmapSource _mountain1Img;
+        private readonly BitmapSource _mountain2Img;
+        private readonly BitmapSource _mountain3Img;
+        private readonly BitmapSource _mountain4Img;
+        
         public int Coins { get; private set; }
 
-        public float WorldWdth { get { return _worldWidth; } }
+        public float WorldWidth { get { return _worldWidth; } }
         public float WorldHeight { get { return _worldHeight; } }
 
         public int Altitude { get; private set; }
@@ -93,6 +102,10 @@ namespace JumpFocus
             _xImg = new BitmapImage(_xUri);
             _circleImg = new BitmapImage(_circleUri);
             _diamondImg = new BitmapImage(_diamondUri);
+            _mountain1Img = new BitmapImage(_mountain1Uri);
+            _mountain2Img = new BitmapImage(_mountain2Uri);
+            _mountain3Img = new BitmapImage(_mountain3Uri);
+            _mountain4Img = new BitmapImage(_mountain4Uri);
         }
 
         public void Step()
@@ -132,7 +145,6 @@ namespace JumpFocus
             };
 
             _anchor = BodyFactory.CreateLoopShape(_world, borders);
-            //_anchor.OnCollision += _anchor_OnCollision;
             _anchor.Restitution = 1f;
 
             //Floor needs to be seperated because it triggers the end of the game
@@ -140,19 +152,6 @@ namespace JumpFocus
             _floor.Restitution = 0f;
             _floor.Friction = 1f;
             _floor.OnCollision += _floor_OnCollision;
-
-            //DEBUG Ball stuff
-            _ballBodies = new List<Body>();
-            //for (int i = 1; i < 100; i++)
-            //{
-            //    var position = new Vector2(i);
-            //    var ball = BodyFactory.CreateCircle(_world, 0.5f, 1f, position);
-            //    ball.BodyType = BodyType.Dynamic;
-            //    ball.Mass = 10f;
-            //    ball.CollisionCategories = Category.Cat4;
-            //    ball.CollidesWith = Category.Cat1;
-            //    _ballBodies.Add(ball);
-            //}
 
             //Creates Dogecoins
             _coins = new List<Body>();
@@ -219,6 +218,10 @@ namespace JumpFocus
             _xs = new List<Rect>();
             _circles = new List<Rect>();
             _diamonds = new List<Rect>();
+            _mountains1 = new List<Rect>();
+            _mountains2 = new List<Rect>();
+            _mountains3 = new List<Rect>();
+            _mountains4 = new List<Rect>();
 
             var w = ConvertUnits.ToDisplayUnits(_worldWidth);
             var h = ConvertUnits.ToDisplayUnits(_worldHeight);
@@ -227,7 +230,14 @@ namespace JumpFocus
             {
                 _xs.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _xImg.Width, _xImg.Height));
                 _circles.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _circleImg.Width, _circleImg.Height));
-                //_diamonds.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _diamondImg.Width, _diamondImg.Height));
+            }
+            for (int i = 0; i < 15; i++)
+            {
+                _diamonds.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _diamondImg.Width, _diamondImg.Height));
+                _mountains1.Add(new Rect(rand.Next(2, (int)w - 2), (int)h - _mountain1Img.Height, _mountain1Img.Width, _mountain1Img.Height));
+                _mountains2.Add(new Rect(rand.Next(2, (int)w - 2), (int)h - _mountain2Img.Height, _mountain2Img.Width, _mountain2Img.Height));
+                _mountains3.Add(new Rect(rand.Next(2, (int)w - 2), (int)h - _mountain3Img.Height, _mountain3Img.Width, _mountain3Img.Height));
+                _mountains4.Add(new Rect(rand.Next(2, (int)w - 2), (int)h - _mountain4Img.Height, _mountain4Img.Width, _mountain4Img.Height));
             }
         }
 
@@ -255,22 +265,6 @@ namespace JumpFocus
                 }
             }
 
-            //Draw balls
-            foreach (var ball in _ballBodies)
-            {
-                var point = new Point
-                {
-                    Y = ConvertUnits.ToDisplayUnits(ball.Position.Y),
-                    X = ConvertUnits.ToDisplayUnits(ball.Position.X)
-                };
-                var ballGeo = new EllipseGeometry(point, ConvertUnits.ToDisplayUnits(0.5f), ConvertUnits.ToDisplayUnits(0.5f));
-
-                if (bg.FillContains(ballGeo))
-                {
-                    dc.DrawGeometry(new SolidColorBrush(Colors.Azure), null, ballGeo);
-                }
-            }
-
             //Draw coins
             foreach (var bodyCoin in _coins)
             {
@@ -281,10 +275,10 @@ namespace JumpFocus
                     {
                         var imgContainer = new Rect
                         {
-                            X = ConvertUnits.ToDisplayUnits(bodyCoin.Position.X - _coinsRadius),
-                            Y = ConvertUnits.ToDisplayUnits(bodyCoin.Position.Y - _coinsRadius),
-                            Width = ConvertUnits.ToDisplayUnits(_coinsRadius * 2),
-                            Height = ConvertUnits.ToDisplayUnits(_coinsRadius * 2)
+                            X = ConvertUnits.ToDisplayUnits(bodyCoin.Position.X) - _coin1Img.Width / 2,
+                            Y = ConvertUnits.ToDisplayUnits(bodyCoin.Position.Y) - _coin1Img.Height / 2,
+                            Width = _coin1Img.Width,
+                            Height = _coin1Img.Height
                         };
 
                         if (bg.FillContains(new RectangleGeometry(imgContainer)))
@@ -392,11 +386,39 @@ namespace JumpFocus
                     dc.DrawImage(_circleImg, circle);
                 }
             }
-            foreach (var diamond in _diamonds)
+            //foreach (var diamond in _diamonds)
+            //{
+            //    if (bg.FillContains(diamond.Location))
+            //    {
+            //        dc.DrawImage(_diamondImg, diamond);
+            //    }
+            //}
+            foreach (var mountain in _mountains1)
             {
-                if (bg.FillContains(diamond.Location))
+                if (bg.FillContains(mountain.Location))
                 {
-                    dc.DrawImage(_diamondImg, diamond);
+                    dc.DrawImage(_mountain1Img, mountain);
+                }
+            }
+            foreach (var mountain in _mountains2)
+            {
+                if (bg.FillContains(mountain.Location))
+                {
+                    dc.DrawImage(_mountain2Img, mountain);
+                }
+            }
+            foreach (var mountain in _mountains3)
+            {
+                if (bg.FillContains(mountain.Location))
+                {
+                    dc.DrawImage(_mountain3Img, mountain);
+                }
+            }
+            foreach (var mountain in _mountains4)
+            {
+                if (bg.FillContains(mountain.Location))
+                {
+                    dc.DrawImage(_mountain4Img, mountain);
                 }
             }
 

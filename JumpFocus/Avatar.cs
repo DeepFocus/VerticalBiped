@@ -5,7 +5,6 @@ using FarseerPhysics.Factories;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -15,7 +14,7 @@ namespace JumpFocus
 {
     class Avatar
     {
-        private World _world;
+        private readonly World _world;
 
         private const float TorsoDensity = 20f;
         private const float ArmDensity = 10f;
@@ -40,8 +39,6 @@ namespace JumpFocus
         //Jump related
         private MK.CameraSpacePoint _previousPosition;
         public bool HasJumped { get; private set; }
-        public bool IsReadyToJump { get; set; }
-        public float VerticalSpeed { get; private set; }
 
         public Avatar(World world, Vector2 position)
         {
@@ -158,29 +155,12 @@ namespace JumpFocus
             dc.PushTransform(transform);
             dc.DrawImage(_rightArmImg, _rightArmGeo.Rect);
             dc.Pop();
-
-            //Draw join for DEBUG
-            //var dJoin = _jRightArm;
-
-            //var jb = new Point
-            //{
-            //    X = ConvertUnits.ToDisplayUnits(dJoin.WorldAnchorA.X),
-            //    Y = ConvertUnits.ToDisplayUnits(dJoin.WorldAnchorA.Y)
-            //};
-            //var je = new Point
-            //{
-            //    X = ConvertUnits.ToDisplayUnits(dJoin.WorldAnchorB.X),
-            //    Y = ConvertUnits.ToDisplayUnits(dJoin.WorldAnchorB.Y)
-            //};
-
-            //dc.DrawEllipse(new SolidColorBrush(Colors.Red), null, jb, 10, 10);
-            //dc.DrawEllipse(new SolidColorBrush(Colors.Green), null, je, 10, 10);
         }
 
         public void Move(IReadOnlyDictionary<MK.JointType, MK.Joint> Joints, float StepSeconds)
         {
-            float maxTorque = 2500f;
-            float speedFactor = 1f;
+            const float maxTorque = 2500f;
+            const float speedFactor = 1f;
             StepSeconds = StepSeconds / speedFactor;
 
             //Torso

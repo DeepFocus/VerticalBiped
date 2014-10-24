@@ -162,6 +162,10 @@
     <Resource Include="Resources\Images\coin1.png" />
     <Resource Include="Resources\Images\coin2.png" />
     <Resource Include="Resources\Images\coin3.png" />
+    <Resource Include="Resources\Images\mountain1.png" />
+    <Resource Include="Resources\Images\mountain2.png" />
+    <Resource Include="Resources\Images\mountain4.png" />
+    <Resource Include="Resources\Images\mountain3.png" />
     <Content Include="vgbtechs\AdaBoostTech.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -187,8 +191,12 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
-    <Resource Include="Resources\Fonts\OCR-A.TTF" />
-    <Resource Include="Resources\Fonts\TATTI___.TTF" />
+    <Content Include="Resources\Fonts\OCR-A.TTF">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Fonts\TATTI___.TTF">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

@@ -14,7 +14,7 @@ namespace JumpFocus.ViewModels
 
             ActivateItem(WelcomeViewModel);
             //ActivateItem(new LeaderBoardViewModel(this));
-            //ActivateItem(new JumpViewModel(this, new Player()));
+            //ActivateItem(new JumpViewModel(this, new Models.Player()));
             DisplayName = ConfigurationManager.AppSettings["appName"];
         }
 

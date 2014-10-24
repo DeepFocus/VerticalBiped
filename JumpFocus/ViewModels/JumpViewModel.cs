@@ -1,4 +1,5 @@
 ﻿using System.Data.Entity.Migrations;
+using System.Drawing.Text;
 using Caliburn.Micro;
 using JumpFocus.DAL;
 using JumpFocus.Models;
@@ -15,6 +16,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using FP = FarseerPhysics;
 using System.Drawing;
+using Brush = System.Drawing.Brush;
+using Color = System.Drawing.Color;
+using FontFamily = System.Drawing.FontFamily;
 
 namespace JumpFocus.ViewModels
 {
@@ -23,7 +27,7 @@ namespace JumpFocus.ViewModels
         private Stopwatch _stopwatch;
 
         private readonly IConductor _conductor;
-        private KinectSensor _sensor;
+        private readonly KinectSensor _sensor;
         private MultiSourceFrameReader _reader;
         private Body[] _bodies;
         //Screenshot setup
@@ -38,7 +42,7 @@ namespace JumpFocus.ViewModels
         private DrawingImage _video;
         private DrawingGroup _drawingGroup;
         
-        //physiiiiiics duddddde
+        //physiiiiiics
         private FP.Dynamics.World _world;
 
         //Game data
@@ -46,6 +50,9 @@ namespace JumpFocus.ViewModels
         private Avatar _avatar;
         private GameWorld _gameWorld;
         private readonly Player _player;
+
+        //Text stuff
+        private readonly Brush _textBrush = new SolidBrush(Color.FromArgb(59, 66, 78));
 
         //Gesture detection
         /// <summary> Path to the gesture database that was trained with VGB </summary>
@@ -59,8 +66,8 @@ namespace JumpFocus.ViewModels
         private VisualGestureBuilderFrameSource _vgbFrameSource;
         /// <summary> Gesture frame reader which will handle gesture events coming from the sensor </summary>
         private VisualGestureBuilderFrameReader _vgbFrameReader;
-        private bool _isJumping = false;
-        private bool _hasJumped = false;
+        private bool _isJumping;
+        private bool _hasJumped;
 
         public DrawingImage Video
         {
@@ -268,10 +275,11 @@ namespace JumpFocus.ViewModels
 
                                         if (null == _avatar)
                                         {
-                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWdth / 2, _gameWorld.WorldHeight - 4f));
+                                            _avatar = new Avatar(_world, new Vector2(_gameWorld.WorldWidth / 2, _gameWorld.WorldHeight - 4f));
                                             _world.Step(0);
                                         }
                                         distance = _bodies[index].Joints[JointType.SpineMid].Position.Z;
+                                        _gameWorld.Message = "Jump when you are ready\r\nLean left or right to navigate";
                                     }
                                 }
                             }
@@ -297,11 +305,11 @@ namespace JumpFocus.ViewModels
                     {
                         var discreteGesture = _vgbFrameSource.Gestures.FirstOrDefault(g => g.GestureType == GestureType.Discrete && g.Name == JumpDiscreteGestureName);
                         var continousGesture = _vgbFrameSource.Gestures.FirstOrDefault(g => g.GestureType == GestureType.Continuous && g.Name == JumpContinousGestureName);
-                        ContinuousGestureResult continousResult;
-                        DiscreteGestureResult discreteResult;
 
                         if (null != discreteGesture && null != continousGesture)
                         {
+                            DiscreteGestureResult discreteResult;
+                            ContinuousGestureResult continousResult;
                             discreteResults.TryGetValue(discreteGesture, out discreteResult);
                             continousResults.TryGetValue(continousGesture, out continousResult);
                             if (null != discreteResult && null != continousResult)
@@ -467,6 +475,12 @@ namespace JumpFocus.ViewModels
                     grfx.DrawImage(background, new Rectangle(0, 0, background.Width, background.Height));
                     grfx.DrawImage(picture, new Rectangle(528 - (newWidth / 2), 100 - (newHeight / 2), newWidth, newHeight));
                     grfx.DrawImage(frame, new Rectangle(0, 0, frame.Width, frame.Height));
+
+                    var fontCollection = new PrivateFontCollection();
+                    fontCollection.AddFontFile("Resources/Fonts/OCR-A.TTF");
+                    var font = new Font(fontCollection.Families.First(), 16);
+                    grfx.DrawString(string.Format("Score: {0}", _gameWorld.Altitude + _gameWorld.Coins), font, _textBrush, new Rectangle(10, 10, 250, 50));
+                    grfx.DrawString(string.Format("@{0}", _player.TwitterHandle), font, _textBrush, new Rectangle(820, 10, 250, 50));
 
                     string time = DateTime.Now.ToString("hh'-'mm'-'ss", CultureInfo.CurrentUICulture.DateTimeFormat);
                     string myPhotos = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
