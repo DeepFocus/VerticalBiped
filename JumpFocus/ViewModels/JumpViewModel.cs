@@ -205,27 +205,6 @@ namespace JumpFocus.ViewModels
                                 if (_gameWorld.HasLanded)
                                 {
                                     _avatar.Land();
-
-                                    //screenshot
-                                    if (string.IsNullOrWhiteSpace(_filePath))
-                                    {
-                                        //get body index
-                                        for (byte index = 0; index < _bodies.Length; index++)
-                                        {
-                                            if (_bodies[index].TrackingId == _currentUserId)
-                                            {
-                                                //mugshot
-                                                var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body, index);
-                                                BitmapEncoder encoder = new PngBitmapEncoder();
-                                                encoder.Frames.Add(BitmapFrame.Create(headBitmap));
-                                                var ms = new MemoryStream();
-                                                encoder.Save(ms);
-                                                Image headPng = Image.FromStream(ms);
-                                                GeneratePostCard(headPng);
-                                                break;
-                                            }
-                                        }
-                                    }
                                 }
 
                                 if (null != _avatar)
@@ -236,6 +215,25 @@ namespace JumpFocus.ViewModels
                                     {
                                         if (_gameWorld.Landed.AddSeconds(2) < DateTime.Now)
                                         {
+                                            //mugshot
+                                            if (string.IsNullOrWhiteSpace(_filePath))
+                                            {
+                                                //get body index
+                                                for (byte index = 0; index < _bodies.Length; index++)
+                                                {
+                                                    if (_bodies[index].TrackingId == _currentUserId)
+                                                    {
+                                                        var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body, index);
+                                                        BitmapEncoder encoder = new PngBitmapEncoder();
+                                                        encoder.Frames.Add(BitmapFrame.Create(headBitmap));
+                                                        var ms = new MemoryStream();
+                                                        encoder.Save(ms);
+                                                        Image headPng = Image.FromStream(ms);
+                                                        GeneratePostCard(headPng);
+                                                        break;
+                                                    }
+                                                }
+                                            }
                                             var history = new History
                                             {
                                                 Altitude = _gameWorld.Altitude,
@@ -294,7 +292,7 @@ namespace JumpFocus.ViewModels
             VisualGestureBuilderFrameReference frameReference = e.FrameReference;
             using (VisualGestureBuilderFrame frame = frameReference.AcquireFrame())
             {
-                if (frame != null)
+                if (frame != null && !_gameWorld.HasLanded)
                 {
                     // get the discrete gesture results which arrived with the latest frame
                     var discreteResults = frame.DiscreteGestureResults;

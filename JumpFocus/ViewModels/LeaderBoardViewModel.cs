@@ -23,17 +23,6 @@ namespace JumpFocus.ViewModels
         private readonly IConductor _conductor;
 
         private History _lastPlayed;
-        public History LastPlayed
-        {
-            get { return _lastPlayed; }
-            private set
-            {
-                _lastPlayed = value;
-                NotifyOfPropertyChange(() => Scores);
-            }
-        }
-
-
 
         private LeaderScoreItem[] _scores;
         public LeaderScoreItem[] Scores
@@ -100,9 +89,13 @@ namespace JumpFocus.ViewModels
                         break;
                 }
             }
-            await _twitterRepo.PostStatusUpdate(
-                string.Concat(ConfigurationManager.AppSettings["TwitterMessage"], " @" , _lastPlayed.Player.TwitterHandle),
-                _lastPlayed.Mugshot);
+            if (!string.IsNullOrWhiteSpace(_lastPlayed.Mugshot))
+            {
+                await _twitterRepo.PostStatusUpdate(
+                    string.Concat(ConfigurationManager.AppSettings["TwitterMessage"], " @",
+                        _lastPlayed.Player.TwitterHandle),
+                    _lastPlayed.Mugshot);
+            }
             var t = new Timer(state => _conductor.ActivateItem(((MainViewModel)_conductor).WelcomeViewModel));
             t.Change(15000, Timeout.Infinite);//waits 10sec
         }
