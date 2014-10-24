@@ -223,8 +223,11 @@
     <Resource Include="Resources\Images\fire.png" />
     <Content Include="Lib\Microsoft.Kinect.dll" />
     <Content Include="Lib\Microsoft.Kinect.VisualGestureBuilder.dll" />
+    <Content Include="Resources\Images\Twitter\card-bg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\Images\Twitter\card.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Videos\Video.mp4">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

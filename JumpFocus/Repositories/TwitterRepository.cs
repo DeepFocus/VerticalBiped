@@ -139,7 +139,6 @@ namespace JumpFocus.Repositories
             {
                 return response.Data;
             }
-
             return null;
         }
 

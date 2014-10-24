@@ -1,19 +1,20 @@
 ﻿using System.Configuration;
 using Caliburn.Micro;
-using Microsoft.Kinect;
 using JumpFocus.Configurations;
 
 namespace JumpFocus.ViewModels
 {
     class MainViewModel : Conductor<IScreen>
     {
-        public WelcomeViewModel WelcomeViewModel { get; set; }
+        public WelcomeViewModel WelcomeViewModel { get; private set; }
 
         public MainViewModel()
         {
             WelcomeViewModel = new WelcomeViewModel(this);
 
             ActivateItem(WelcomeViewModel);
+            //ActivateItem(new LeaderBoardViewModel(this));
+            //ActivateItem(new JumpViewModel(this, new Player()));
             DisplayName = ConfigurationManager.AppSettings["appName"];
         }
 
