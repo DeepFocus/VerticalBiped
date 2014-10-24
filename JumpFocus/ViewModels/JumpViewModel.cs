@@ -462,16 +462,13 @@ namespace JumpFocus.ViewModels
         {
             if (null != input)
             {
-                using (var background = Image.FromFile("Resources/Images/Twitter/card-bg.png"))
                 using (var picture = input)
                 using (var frame = Image.FromFile("Resources/Images/Twitter/card.png"))
-                using (var newImage = new Bitmap(background.Width, background.Height))
+                using (var newImage = new Bitmap(frame.Width, frame.Height))
                 using (var grfx = Graphics.FromImage(newImage))
                 {
-                    var newWidth = input.Width + 10;
-                    var newHeight = input.Height + 10;
-                    grfx.DrawImage(background, new Rectangle(0, 0, background.Width, background.Height));
-                    grfx.DrawImage(picture, new Rectangle(528 - (newWidth / 2), 100 - (newHeight / 2), newWidth, newHeight));
+                    grfx.Clear(Color.FromArgb(231, 238, 233));
+                    grfx.DrawImage(picture, new Rectangle(490, 65, 70, 70));
                     grfx.DrawImage(frame, new Rectangle(0, 0, frame.Width, frame.Height));
 
                     var fontCollection = new PrivateFontCollection();
