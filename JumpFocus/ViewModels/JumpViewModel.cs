@@ -197,9 +197,9 @@ namespace JumpFocus.ViewModels
                                     _avatar.Move(body.Joints, stepSeconds);
                                 }
 
-                                if (_avatar.HasJumped && !string.IsNullOrWhiteSpace(_gameWorld.Message) && !_gameWorld.HasLanded)
+                                if (_hasJumped && !string.IsNullOrWhiteSpace(_gameWorld.Message) && !_gameWorld.HasLanded)
                                 {
-                                    _gameWorld.Message = string.Empty;
+                                    _gameWorld.Message = "Lean left or right to navigate";
                                 }
 
                                 if (_gameWorld.HasLanded)
@@ -279,7 +279,7 @@ namespace JumpFocus.ViewModels
                                             _world.Step(0);
                                         }
                                         distance = _bodies[index].Joints[JointType.SpineMid].Position.Z;
-                                        _gameWorld.Message = "Jump when you are ready\r\nLean left or right to navigate";
+                                        _gameWorld.Message = "Jump when you are ready";
                                     }
                                 }
                             }

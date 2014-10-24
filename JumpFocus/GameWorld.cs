@@ -18,7 +18,7 @@ namespace JumpFocus
     {
         private readonly World _world;
 
-        private const float _worldWidth = 250f,_worldHeight = 500f;
+        private const float _worldWidth = 350f,_worldHeight = 500f;
         private readonly float _cameraWidth = 80f, _cameraHeight = 80f;
 
         private Rect _camera;
@@ -156,7 +156,7 @@ namespace JumpFocus
             //Creates Dogecoins
             _coins = new List<Body>();
             var rand = new Random();
-            for (int i = 0; i < 200; i++)
+            for (int i = 0; i < 250; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
 
@@ -200,7 +200,7 @@ namespace JumpFocus
             //Add cats
             _cats = new List<Body>();
             rand = new Random();
-            for (int i = 0; i < 80; i++)
+            for (int i = 0; i < 100; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
                 //var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
@@ -231,7 +231,7 @@ namespace JumpFocus
                 _xs.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _xImg.Width, _xImg.Height));
                 _circles.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _circleImg.Width, _circleImg.Height));
             }
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < 25; i++)
             {
                 _diamonds.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _diamondImg.Width, _diamondImg.Height));
                 _mountains1.Add(new Rect(rand.Next(2, (int)w - 2), (int)h - _mountain1Img.Height, _mountain1Img.Width, _mountain1Img.Height));
@@ -254,9 +254,9 @@ namespace JumpFocus
                 var floorRect = new Rect
                 {
                     X = _camera.X,
-                    Y = ConvertUnits.ToDisplayUnits(_worldHeight),
+                    Y = ConvertUnits.ToDisplayUnits(_worldHeight) - 200,
                     Width = ConvertUnits.ToDisplayUnits(_cameraWidth) - 1,
-                    Height = floorHeight - 1
+                    Height = floorHeight + 199
                 };
                 var floor = new RectangleGeometry(floorRect);
                 if (bg.FillContains(floor))
@@ -374,49 +374,49 @@ namespace JumpFocus
             //Draw decorations
             foreach (var x in _xs)
             {
-                if (bg.FillContains(x.Location))
+                if (bg.FillContains(new RectangleGeometry(x)))
                 {
                     dc.DrawImage(_xImg, x);
                 }
             }
             foreach (var circle in _circles)
             {
-                if (bg.FillContains(circle.Location))
+                if (bg.FillContains(new RectangleGeometry(circle)))
                 {
                     dc.DrawImage(_circleImg, circle);
                 }
             }
-            //foreach (var diamond in _diamonds)
-            //{
-            //    if (bg.FillContains(diamond.Location))
-            //    {
-            //        dc.DrawImage(_diamondImg, diamond);
-            //    }
-            //}
+            foreach (var diamond in _diamonds)
+            {
+                if (bg.FillContains(new RectangleGeometry(diamond)))
+                {
+                    dc.DrawImage(_diamondImg, diamond);
+                }
+            }
             foreach (var mountain in _mountains1)
             {
-                if (bg.FillContains(mountain.Location))
+                if (bg.FillContains(new RectangleGeometry(mountain)))
                 {
                     dc.DrawImage(_mountain1Img, mountain);
                 }
             }
             foreach (var mountain in _mountains2)
             {
-                if (bg.FillContains(mountain.Location))
+                if (bg.FillContains(new RectangleGeometry(mountain)))
                 {
                     dc.DrawImage(_mountain2Img, mountain);
                 }
             }
             foreach (var mountain in _mountains3)
             {
-                if (bg.FillContains(mountain.Location))
+                if (bg.FillContains(new RectangleGeometry(mountain)))
                 {
                     dc.DrawImage(_mountain3Img, mountain);
                 }
             }
             foreach (var mountain in _mountains4)
             {
-                if (bg.FillContains(mountain.Location))
+                if (bg.FillContains(new RectangleGeometry(mountain)))
                 {
                     dc.DrawImage(_mountain4Img, mountain);
                 }

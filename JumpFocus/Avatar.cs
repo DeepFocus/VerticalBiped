@@ -36,10 +36,6 @@ namespace JumpFocus
 
         public Rect BodyCenter { get { return _torsoGeo.Rect; } }
 
-        //Jump related
-        private MK.CameraSpacePoint _previousPosition;
-        public bool HasJumped { get; private set; }
-
         public Avatar(World world, Vector2 position)
         {
             _world = world;
