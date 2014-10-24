@@ -39,7 +39,9 @@ namespace JumpFocus
         private readonly Brush _textBrush = new SolidColorBrush(Color.FromRgb(59, 66, 78));
         private readonly Typeface _typeface = new Typeface(new FontFamily(new Uri("pack://application:,,,/"), "./Resources/Fonts/#OCR-A"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
         private readonly Uri _cloudUri = new Uri("pack://application:,,,/Resources/Images/cloud.png");
-        private readonly Uri _coinUri = new Uri("pack://application:,,,/Resources/Images/coin.png");
+        private readonly Uri _coin1Uri = new Uri("pack://application:,,,/Resources/Images/coin1.png");
+        private readonly Uri _coin2Uri = new Uri("pack://application:,,,/Resources/Images/coin2.png");
+        private readonly Uri _coin3Uri = new Uri("pack://application:,,,/Resources/Images/coin3.png");
         private readonly Uri _catUri = new Uri("pack://application:,,,/Resources/Images/cat.png");
 
         private readonly Uri _fireUri = new Uri("pack://application:,,,/Resources/Images/fire.png");
@@ -48,7 +50,9 @@ namespace JumpFocus
         private readonly Uri _diamondUri = new Uri("pack://application:,,,/Resources/Images/diamond.png");
 
         private readonly BitmapSource _cloudImg;
-        private readonly BitmapSource _coinImg;
+        private readonly BitmapSource _coin1Img;
+        private readonly BitmapSource _coin2Img;
+        private readonly BitmapSource _coin3Img;
         private readonly BitmapSource _catImg;
         private readonly BitmapSource _catReversedImg;
 
@@ -78,7 +82,9 @@ namespace JumpFocus
             _world = world;
 
             _cloudImg = new BitmapImage(_cloudUri);
-            _coinImg = new BitmapImage(_coinUri);
+            _coin1Img = new BitmapImage(_coin1Uri);
+            _coin2Img = new BitmapImage(_coin2Uri);
+            _coin3Img = new BitmapImage(_coin3Uri);
             _catImg = new BitmapImage(_catUri);
             _catReversedImg = new TransformedBitmap(_catImg, new ScaleTransform(-1, 1));
 
@@ -155,7 +161,7 @@ namespace JumpFocus
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
 
-                var coin = BodyFactory.CreateCircle(_world, ConvertUnits.ToSimUnits(_coinImg.Width / 2), 2f, position);
+                var coin = BodyFactory.CreateCircle(_world, ConvertUnits.ToSimUnits(_coin1Img.Width / 2), 2f, position);
                 coin.BodyType = BodyType.Static;
                 coin.CollisionCategories = Category.Cat2;
                 coin.CollidesWith = Category.Cat1;
@@ -283,8 +289,18 @@ namespace JumpFocus
 
                         if (bg.FillContains(new RectangleGeometry(imgContainer)))
                         {
-                            //dc.DrawGeometry(_brownBrush, null, coinGeo);
-                            dc.DrawImage(_coinImg, imgContainer);
+                            if (coin.Value >= 45)
+                            {
+                                dc.DrawImage(_coin3Img, imgContainer);
+                            }
+                            else if (coin.Value >= 30)
+                            {
+                                dc.DrawImage(_coin2Img, imgContainer);
+                            }
+                            else
+                            {
+                                dc.DrawImage(_coin1Img, imgContainer);
+                            }
                         }
                     }
                 }

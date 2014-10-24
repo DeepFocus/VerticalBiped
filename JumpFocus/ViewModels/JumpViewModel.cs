@@ -37,10 +37,7 @@ namespace JumpFocus.ViewModels
 
         private DrawingImage _video;
         private DrawingGroup _drawingGroup;
-
-        private float _readyCounter;
-        private int _countDown = 4;
-
+        
         //physiiiiiics duddddde
         private FP.Dynamics.World _world;
 
@@ -88,8 +85,6 @@ namespace JumpFocus.ViewModels
             {
                 // create a stopwatch for FPS calculation
                 _stopwatch = new Stopwatch();
-                _readyCounter = 0; //user readyness
-
                 _sensor.Open();
 
                 _bodies = new Body[6];//SDK doesn't provide this number anymore
@@ -487,7 +482,14 @@ namespace JumpFocus.ViewModels
             {
                 _reader.Dispose();
             }
-
+            if (_vgbFrameReader != null)
+            {
+                _vgbFrameReader.Dispose();
+            }
+            if (_vgbFrameSource != null)
+            {
+                _vgbFrameSource.Dispose(); 
+            }
             _sensor.Close();
 
             base.OnDeactivate(close);

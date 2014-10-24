@@ -100,13 +100,6 @@ namespace JumpFocus.Repositories
             return null;
         }
 
-
-        public async Task<TwitterStatusesUpdateResponse> PostStatusUpdate(string message)
-        {
-            await PostStatusUpdate(message, null);
-            return null;
-        }
-
         /// <summary>
         /// Post a message on Twitter
         /// </summary>
