@@ -468,8 +468,8 @@ namespace JumpFocus.ViewModels
                 using (var grfx = Graphics.FromImage(newImage))
                 {
                     grfx.Clear(Color.FromArgb(231, 238, 233));
-                    var newWidth = input.Width + 10;
-                    var newHeight = input.Height + 10;
+                    var newWidth = input.Width + 25;
+                    var newHeight = input.Height + 25;
                     grfx.DrawImage(picture, new Rectangle(528 - (newWidth / 2), 100 - (newHeight / 2), newWidth, newHeight));
                     grfx.DrawImage(frame, new Rectangle(0, 0, frame.Width, frame.Height));
 
