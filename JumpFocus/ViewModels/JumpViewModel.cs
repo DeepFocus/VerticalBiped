@@ -224,11 +224,11 @@ namespace JumpFocus.ViewModels
                                                     if (_bodies[index].TrackingId == _currentUserId)
                                                     {
                                                         var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body, index);
-                                                        BitmapEncoder encoder = new PngBitmapEncoder();
+                                                        var encoder = new PngBitmapEncoder();
                                                         encoder.Frames.Add(BitmapFrame.Create(headBitmap));
                                                         var ms = new MemoryStream();
                                                         encoder.Save(ms);
-                                                        Image headPng = Image.FromStream(ms);
+                                                        var headPng = Image.FromStream(ms);
                                                         GeneratePostCard(headPng);
                                                         break;
                                                     }
@@ -357,7 +357,7 @@ namespace JumpFocus.ViewModels
         {
             var mapper = _sensor.CoordinateMapper;
             var head = mapper.MapCameraPointToDepthSpace(body.Joints[JointType.Head].Position);
-            var spine = mapper.MapCameraPointToDepthSpace(body.Joints[JointType.SpineShoulder].Position);
+            var spine = mapper.MapCameraPointToDepthSpace(body.Joints[JointType.Neck].Position);
 
             if (colorFrame.RawColorImageFormat == ColorImageFormat.Bgra)
             {

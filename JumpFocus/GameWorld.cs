@@ -18,7 +18,7 @@ namespace JumpFocus
     {
         private readonly World _world;
 
-        private const float _worldWidth = 350f,_worldHeight = 500f;
+        private const float _worldWidth = 500f,_worldHeight = 800f;
         private readonly float _cameraWidth = 80f, _cameraHeight = 80f;
 
         private Rect _camera;
@@ -35,7 +35,6 @@ namespace JumpFocus
         private List<Rect> _mountains1;
         private List<Rect> _mountains2;
         private List<Rect> _mountains3;
-        private List<Rect> _mountains4;
 
         private readonly Brush _floorBrush = new SolidColorBrush(Color.FromRgb(236, 124, 95));
         private readonly Brush _skyBrush = new SolidColorBrush(Color.FromRgb(236, 241, 237));
@@ -54,7 +53,6 @@ namespace JumpFocus
         private readonly Uri _mountain1Uri = new Uri("pack://application:,,,/Resources/Images/mountain1.png");
         private readonly Uri _mountain2Uri = new Uri("pack://application:,,,/Resources/Images/mountain2.png");
         private readonly Uri _mountain3Uri = new Uri("pack://application:,,,/Resources/Images/mountain3.png");
-        private readonly Uri _mountain4Uri = new Uri("pack://application:,,,/Resources/Images/mountain4.png");
 
         private readonly BitmapSource _cloudImg;
         private readonly BitmapSource _coin1Img;
@@ -71,7 +69,6 @@ namespace JumpFocus
         private readonly BitmapSource _mountain1Img;
         private readonly BitmapSource _mountain2Img;
         private readonly BitmapSource _mountain3Img;
-        private readonly BitmapSource _mountain4Img;
         
         public int Coins { get; private set; }
 
@@ -105,7 +102,6 @@ namespace JumpFocus
             _mountain1Img = new BitmapImage(_mountain1Uri);
             _mountain2Img = new BitmapImage(_mountain2Uri);
             _mountain3Img = new BitmapImage(_mountain3Uri);
-            _mountain4Img = new BitmapImage(_mountain4Uri);
         }
 
         public void Step()
@@ -156,7 +152,7 @@ namespace JumpFocus
             //Creates Dogecoins
             _coins = new List<Body>();
             var rand = new Random();
-            for (int i = 0; i < 250; i++)
+            for (int i = 0; i < 500; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
 
@@ -184,7 +180,7 @@ namespace JumpFocus
 
             _clouds = new List<Body>();
             rand = new Random();
-            for (int i = 0; i < 300; i++)
+            for (int i = 0; i < 600; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
                 //Create a single body with multiple fixtures
@@ -200,7 +196,7 @@ namespace JumpFocus
             //Add cats
             _cats = new List<Body>();
             rand = new Random();
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 200; i++)
             {
                 var position = new Vector2(rand.Next(2, (int)_worldWidth - 2), rand.Next(2, (int)_worldHeight - 25));
                 //var cat = BodyFactory.CreateRectangle(_world, ConvertUnits.ToSimUnits(_catImg.Width), ConvertUnits.ToSimUnits(_catImg.Height), 1f, position);
@@ -208,7 +204,7 @@ namespace JumpFocus
                 cat.BodyType = BodyType.Kinematic; // so they don't stop
                 cat.OnCollision += cat_OnCollision;
 
-                float speed = rand.Next(0, 2) == 1 ? rand.Next(1000, 5000) : -rand.Next(1000, 5000);
+                float speed = rand.Next(0, 2) == 1 ? rand.Next(2000, 10000) : -rand.Next(2000, 10000);
                 cat.LinearVelocity = new Vector2(speed, 0);
 
                 _cats.Add(cat);
@@ -221,23 +217,27 @@ namespace JumpFocus
             _mountains1 = new List<Rect>();
             _mountains2 = new List<Rect>();
             _mountains3 = new List<Rect>();
-            _mountains4 = new List<Rect>();
 
             var w = ConvertUnits.ToDisplayUnits(_worldWidth);
             var h = ConvertUnits.ToDisplayUnits(_worldHeight);
 
             for (int i = 0; i < 400; i++)
             {
-                _xs.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _xImg.Width, _xImg.Height));
-                _circles.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _circleImg.Width, _circleImg.Height));
+                _xs.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 205), _xImg.Width, _xImg.Height));
+                _circles.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 250), _circleImg.Width, _circleImg.Height));
             }
-            for (int i = 0; i < 25; i++)
+            for (int i = 0; i < 50; i++)
             {
-                _diamonds.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 25), _diamondImg.Width, _diamondImg.Height));
-                _mountains1.Add(new Rect(rand.Next(2, (int)w - 2), (int)h - _mountain1Img.Height, _mountain1Img.Width, _mountain1Img.Height));
-                _mountains2.Add(new Rect(rand.Next(2, (int)w - 2), (int)h - _mountain2Img.Height, _mountain2Img.Width, _mountain2Img.Height));
-                _mountains3.Add(new Rect(rand.Next(2, (int)w - 2), (int)h - _mountain3Img.Height, _mountain3Img.Width, _mountain3Img.Height));
-                _mountains4.Add(new Rect(rand.Next(2, (int)w - 2), (int)h - _mountain4Img.Height, _mountain4Img.Width, _mountain4Img.Height));
+                _diamonds.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 250), _diamondImg.Width, _diamondImg.Height));
+            }
+            for (int i = 0; i < 5; i++)
+            {
+                _mountains1.Add(new Rect(rand.Next(2, (int)w / 2 - 10), rand.Next((int)(h - _mountain1Img.Height), (int)h), _mountain1Img.Width, _mountain1Img.Height));
+                _mountains1.Add(new Rect(rand.Next((int)w / 2 - 10, (int)w - 2), rand.Next((int)(h - _mountain1Img.Height), (int)h), _mountain1Img.Width, _mountain1Img.Height));
+                _mountains2.Add(new Rect(rand.Next(2, (int)w / 2 - 10), rand.Next((int)(h - _mountain2Img.Height), (int)h), _mountain2Img.Width, _mountain2Img.Height));
+                _mountains2.Add(new Rect(rand.Next((int)w / 2 - 10, (int)w - 2), rand.Next((int)(h - _mountain2Img.Height), (int)h), _mountain2Img.Width, _mountain2Img.Height));
+                _mountains3.Add(new Rect(rand.Next(2, (int)w / 2 - 10), rand.Next((int)(h - _mountain3Img.Height), (int)h), _mountain3Img.Width, _mountain3Img.Height));
+                _mountains3.Add(new Rect(rand.Next((int)w / 2 - 10, (int)w - 2), rand.Next((int)(h - _mountain3Img.Height), (int)h), _mountain3Img.Width, _mountain3Img.Height));
             }
         }
 
@@ -412,13 +412,6 @@ namespace JumpFocus
                 if (bg.FillContains(new RectangleGeometry(mountain)))
                 {
                     dc.DrawImage(_mountain3Img, mountain);
-                }
-            }
-            foreach (var mountain in _mountains4)
-            {
-                if (bg.FillContains(new RectangleGeometry(mountain)))
-                {
-                    dc.DrawImage(_mountain4Img, mountain);
                 }
             }
 
