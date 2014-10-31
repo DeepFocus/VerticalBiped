@@ -221,7 +221,7 @@ namespace JumpFocus
             var w = ConvertUnits.ToDisplayUnits(_worldWidth);
             var h = ConvertUnits.ToDisplayUnits(_worldHeight);
 
-            for (int i = 0; i < 400; i++)
+            for (int i = 0; i < 500; i++)
             {
                 _xs.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 205), _xImg.Width, _xImg.Height));
                 _circles.Add(new Rect(rand.Next(2, (int)w - 2), rand.Next(2, (int)h - 250), _circleImg.Width, _circleImg.Height));

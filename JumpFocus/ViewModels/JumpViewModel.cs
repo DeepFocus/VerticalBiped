@@ -56,7 +56,7 @@ namespace JumpFocus.ViewModels
 
         //Gesture detection
         /// <summary> Path to the gesture database that was trained with VGB </summary>
-        private const string GestureDatabase = @"Database\jump.gbd";
+        private const string GestureDatabase = @"Database\JumpFocus.gbd";
         /// <summary> Name of the discrete gesture in the database that we want to track </summary>
         private const string JumpDiscreteGestureName = "Jump";
         private const string JumpContinousGestureName = "JumpProgress";
