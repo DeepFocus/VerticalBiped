@@ -159,12 +159,24 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Resource Include="Resources\Images\coin1.png" />
-    <Resource Include="Resources\Images\coin2.png" />
-    <Resource Include="Resources\Images\coin3.png" />
-    <Resource Include="Resources\Images\mountain1.png" />
-    <Resource Include="Resources\Images\mountain2.png" />
-    <Resource Include="Resources\Images\mountain3.png" />
+    <Content Include="Resources\Images\coin1.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\coin2.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\coin3.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\mountain1.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\mountain2.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\mountain3.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="vgbtechs\AdaBoostTech.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -221,16 +233,36 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\Images\Avatar\Body.png" />
-    <Resource Include="Resources\Images\Avatar\LeftArm.png" />
-    <Resource Include="Resources\Images\Avatar\RightArm.png" />
-    <Resource Include="Resources\Images\Leaderboard_left.png" />
-    <Resource Include="Resources\Images\Leaderboard_UpperLeft.png" />
-    <Resource Include="Resources\Images\Leaderboard_Right.png" />
-    <Resource Include="Resources\Images\circle.png" />
-    <Resource Include="Resources\Images\diamond.png" />
-    <Resource Include="Resources\Images\x.png" />
-    <Resource Include="Resources\Images\fire.png" />
+    <Content Include="Resources\Images\Avatar\Body.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\Avatar\LeftArm.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\Avatar\RightArm.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\Leaderboard_left.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\Leaderboard_UpperLeft.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\Leaderboard_Right.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\circle.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\diamond.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\x.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\fire.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Lib\Microsoft.Kinect.dll" />
     <Content Include="Lib\Microsoft.Kinect.VisualGestureBuilder.dll" />
     <Content Include="Resources\Images\Twitter\card.png">
@@ -244,10 +276,18 @@
     </Content>
     <Resource Include="icon.ico" />
     <Content Include="Lib\Microsoft.Speech.dll" />
-    <Resource Include="Resources\Images\intro.png" />
-    <Resource Include="Resources\Images\cat.png" />
-    <Resource Include="Resources\Images\background.png" />
-    <Resource Include="Resources\Images\cloud.png" />
+    <Content Include="Resources\Images\intro.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\cat.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\background.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Images\cloud.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Farseer Physics Engine 3.5\Farseer Physics.csproj">
