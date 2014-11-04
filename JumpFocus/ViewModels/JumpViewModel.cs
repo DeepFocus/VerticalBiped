@@ -213,27 +213,27 @@ namespace JumpFocus.ViewModels
                                     _gameWorld.MoveCameraTo(_avatar.BodyCenter.X, _avatar.BodyCenter.Y);
                                     if (_gameWorld.HasLanded)
                                     {
-                                        if (_gameWorld.Landed.AddSeconds(2) < DateTime.Now)
+                                        //mugshot
+                                        if (string.IsNullOrWhiteSpace(_filePath))
                                         {
-                                            //mugshot
-                                            if (string.IsNullOrWhiteSpace(_filePath))
+                                            //get body index
+                                            for (byte index = 0; index < _bodies.Length; index++)
                                             {
-                                                //get body index
-                                                for (byte index = 0; index < _bodies.Length; index++)
+                                                if (_bodies[index].TrackingId == _currentUserId)
                                                 {
-                                                    if (_bodies[index].TrackingId == _currentUserId)
-                                                    {
-                                                        var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body, index);
-                                                        var encoder = new PngBitmapEncoder();
-                                                        encoder.Frames.Add(BitmapFrame.Create(headBitmap));
-                                                        var ms = new MemoryStream();
-                                                        encoder.Save(ms);
-                                                        var headPng = Image.FromStream(ms);
-                                                        GeneratePostCard(headPng);
-                                                        break;
-                                                    }
+                                                    var headBitmap = RenderHeadshot(colorFrame, depthFrame, bodyIndexFrame, body, index);
+                                                    var encoder = new PngBitmapEncoder();
+                                                    encoder.Frames.Add(BitmapFrame.Create(headBitmap));
+                                                    var ms = new MemoryStream();
+                                                    encoder.Save(ms);
+                                                    var headPng = Image.FromStream(ms);
+                                                    GeneratePostCard(headPng);
+                                                    break;
                                                 }
                                             }
+                                        }
+                                        if (_gameWorld.Landed.AddSeconds(2) < DateTime.Now)
+                                        {
                                             var history = new History
                                             {
                                                 Altitude = _gameWorld.Altitude,

@@ -218,6 +218,7 @@ namespace JumpFocus
             if (_torso.LinearVelocity.Y <= 0)
             {
                 _torso.BodyType = BodyType.Dynamic;
+                _torso.ApplyLinearImpulse(new Vector2(0, -10000));
             }
             _torso.ApplyLinearImpulse(new Vector2(0, currentStage * -5000));
         }
